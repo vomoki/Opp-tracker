@@ -302,7 +302,7 @@
     .quarter-card { border-radius: 16px; padding: 0.78rem; background: rgba(255,255,255,0.62); border: 1px solid var(--border); box-shadow: inset 0 1px 0 rgba(255,255,255,0.8); }
     [data-theme="dark"] .quarter-card { background: rgba(15,28,60,0.52); }
     .quarter-card strong { display: block; font-size: 1.25rem; margin-top: 0.28rem; letter-spacing: -0.03em; }
-    .sync-grid { display: none; grid-template-columns: 1fr 1fr auto; gap: 0.8rem; align-items: end; margin-bottom: 1rem; }
+    .sync-grid { display: none; grid-template-columns: 1fr; gap: 0.8rem; align-items: end; margin-bottom: 1rem; }
     .sync-grid.open { display: grid; }
     .sync-help { grid-column: 1/-1; color: var(--muted); font-size: 0.84rem; background: rgba(255,255,255,0.55); border: 1px dashed var(--border); padding: 0.8rem; border-radius: 16px; }
     [data-theme="dark"] .sync-help { background: rgba(15,28,60,0.52); }
@@ -537,22 +537,20 @@
     </header>
 
     <section class="sync-grid panel" id="syncPanel">
-      <label>Power Automate endpoint
-        <input id="csvUrlInput" type="url" placeholder="Paste the HTTP trigger URL from Power Automate" />
-      </label>
-      <label>Legacy write-back endpoint <span class="muted">optional / not required</span>
-        <input id="writeUrlInput" type="url" placeholder="Leave empty when using the Power Automate endpoint above" />
-      </label>
+      <input class="hidden" id="csvUrlInput" type="url" />
+      <input class="hidden" id="writeUrlInput" type="url" />
+      <button class="hidden" id="loadCsvUrlBtn" type="button">Pull CSV</button>
+      <button class="hidden" id="pushCsvBtn" type="button">Save CSV</button>
+      <button class="hidden" id="testFlowBtn" type="button">Test Flow</button>
       <div class="toolbar-group">
-        <button id="loadCsvUrlBtn">Pull CSV</button>
-        <button class="ghost" id="pushCsvBtn">Save CSV</button>
-        <button class="ghost" id="testFlowBtn">Test Flow</button>
+        <button class="ghost" id="linkLocalCsvBtn">Link Local CSV</button>
+        <button class="ghost" id="saveLocalCsvBtn">Save Linked CSV</button>
         <button class="ghost" id="exportCsvBtn">Export CSV</button>
         <button class="ghost" id="importCsvBtn">Import CSV</button>
         <input class="file-input" id="importCsvFile" type="file" accept=".csv,text/csv" />
       </div>
       <div class="sync-help">
-        Real sync mode: paste the Power Automate HTTP trigger URL. Pull CSV sends {"action":"read"}; Save CSV sends {"action":"write","csv":"..."}. The flow must return Access-Control-Allow-Origin: * on every Response action.
+        Use Link Local CSV with a OneDrive-synced CSV file. After linking, changes are auto-saved back to that CSV, and OneDrive will sync it to the shared folder.
       </div>
     </section>
 
@@ -562,10 +560,10 @@
         <article class="stat-card"><span class="stat-label">Strong Upside</span><strong class="stat-value" id="strongUpsideTotal">$0</strong><span class="stat-sub">Strong Upside only</span></article>
         <article class="stat-card"><span class="stat-label">Pipeline</span><strong class="stat-value" id="pipelineTotal">$0</strong><span class="stat-sub">Upside + Pipeline</span></article>
         <article class="stat-card custom-amount-card"><span class="stat-label">Custom Amount</span><input id="customAmountInput" inputmode="numeric" placeholder="$0" /><span class="stat-sub">Editable, included in total</span></article>
-        <article class="stat-card"><span class="stat-label">Total Achievement</span><strong class="stat-value" id="grandTotal">$0</strong><span class="stat-sub">3 boxes + custom amount</span></article>
+        <article class="stat-card"><span class="stat-label">Total Achievement</span><strong class="stat-value" id="grandTotal">$0</strong><span class="stat-sub">Committed + custom amount</span></article>
       </div>
       <div class="quarter-block">
-        <div class="panel-head"><div><h2>Quarter calculation</h2><p class="muted">Calculated by estimated completion date / quarter, without the editable custom amount.</p></div></div>
+        <div class="panel-head"><div><h2>Quarter calculation</h2><p class="muted">Calculated by committed opportunities only, without the editable custom amount.</p></div></div>
         <div class="quarter-grid" id="quarterGrid"></div>
       </div>
     </section>
@@ -732,6 +730,9 @@
       theme: "light"
     };
     let state = loadState();
+    let autoSaveTimer = null;
+    let autoSaving = false;
+    let localCsvHandle = null;
 
     const $ = selector => document.querySelector(selector);
     const body = $("#opportunityBody");
@@ -770,13 +771,15 @@
     // Add new Domain / AM / SE is handled directly inside the popup dropdowns.
     $("#csvUrlInput").value = state.csvUrl || "";
     $("#writeUrlInput").value = state.writeUrl || "";
-    $("#csvUrlInput").addEventListener("input", event => { state.csvUrl = event.target.value.trim(); persist(false); updateSyncStatus(); });
-    $("#writeUrlInput").addEventListener("input", event => { state.writeUrl = event.target.value.trim(); persist(false); });
+    $("#csvUrlInput").addEventListener("input", event => { state.csvUrl = event.target.value.trim(); persist(false, false); updateSyncStatus(); });
+    $("#writeUrlInput").addEventListener("input", event => { state.writeUrl = event.target.value.trim(); persist(false, false); });
     $("#loadCsvUrlBtn").addEventListener("click", loadCsvUrl);
     $("#exportCsvBtn").addEventListener("click", exportCsv);
     $("#importCsvBtn").addEventListener("click", () => $("#importCsvFile").click());
     $("#importCsvFile").addEventListener("change", importCsvFile);
-    $("#pushCsvBtn").addEventListener("click", pushCsv);
+    $("#pushCsvBtn").addEventListener("click", () => pushCsv(false));
+    $("#linkLocalCsvBtn").addEventListener("click", linkLocalCsv);
+    $("#saveLocalCsvBtn").addEventListener("click", () => saveLinkedCsv(false));
     $("#testFlowBtn").addEventListener("click", testPowerAutomateFlow);
     $("#oppForm").addEventListener("submit", saveOpportunityFromModal);
     $("#oppModalCloseBtn").addEventListener("click", closeOpportunityModal);
@@ -827,13 +830,14 @@
         return structuredClone(DEFAULT_STATE);
       }
     }
-    function persist(showSaved = true) {
+    function persist(showSaved = true, autoSync = true) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       if (showSaved) {
         const now = new Date();
         $("#lastSavedPill").textContent = `Saved ${now.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"})}`;
       }
       updateSyncStatus();
+      if (autoSync) scheduleAutoSave();
     }
     function uid() { return `opp-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
     function unique(values) { return [...new Set(values.map(v => String(v || "").trim()).filter(Boolean))]; }
@@ -956,7 +960,7 @@
         }
         const clean = value.trim();
         state.domains = unique([...state.domains, clean]);
-        persist(false);
+        persist(false, false);
         ensureDatalist();
         target.innerHTML = domainOptions(clean);
         target.value = clean;
@@ -971,7 +975,7 @@
         }
         const clean = value.trim();
         state.amOwners = unique([...state.amOwners, clean]);
-        persist(false);
+        persist(false, false);
         target.innerHTML = ownerOptions(state.amOwners, clean, ADD_AM_VALUE, "+ Add new AM");
         target.value = clean;
         return;
@@ -984,7 +988,7 @@
         }
         const clean = value.trim();
         state.seOwners = unique([...state.seOwners, clean]);
-        persist(false);
+        persist(false, false);
         target.innerHTML = ownerOptions(state.seOwners, clean, ADD_SE_VALUE, "+ Add new SE");
         target.value = clean;
       }
@@ -1153,7 +1157,7 @@
           ensureDatalist();
         }
         row.updatedAt = new Date().toISOString();
-        persist(false);
+        persist(false, false);
         updateSummary();
       }
       if (target.matches(".note-editor")) saveNote(target, false);
@@ -1219,7 +1223,7 @@
       }
       if (idBtn.classList.contains("toggle-note-btn")) {
         state.expanded[id] = !state.expanded[id];
-        persist(false);
+        persist(false, false);
         renderRows();
         return;
       }
@@ -1278,16 +1282,21 @@
       $("#committedTotal").textContent = money(committed);
       $("#strongUpsideTotal").textContent = money(strong);
       $("#pipelineTotal").textContent = money(pipeline);
-      $("#grandTotal").textContent = money(committed + strong + pipeline + custom);
+      $("#grandTotal").textContent = money(committed + custom);
       updateAchievementPercent();
       const quarters = {Q1:0,Q2:0,Q3:0,Q4:0};
-      state.rows.forEach(row => { quarters[row.quarter || quarterFromDate(row.date)] += Number(row.size || 0); });
-      $("#quarterGrid").innerHTML = Object.entries(quarters).map(([q,total]) => `<article class="quarter-card"><span class="stat-label">${q}</span><strong>${money(total)}</strong><span class="stat-sub">Without custom amount</span></article>`).join("");
+      state.rows
+        .filter(row => ["Closed","Committed"].includes(row.relevance))
+        .forEach(row => { quarters[row.quarter || quarterFromDate(row.date)] += Number(row.size || 0); });
+      $("#quarterGrid").innerHTML = Object.entries(quarters).map(([q,total]) => `<article class="quarter-card"><span class="stat-label">${q}</span><strong>${money(total)}</strong><span class="stat-sub">Committed only</span></article>`).join("");
     }
     function updateSyncStatus() {
       const pill = $("#syncStatus");
       pill.className = "sync-pill";
-      if (state.csvUrl) {
+      if (localCsvHandle) {
+        pill.classList.add("linked");
+        pill.textContent = "Local CSV linked";
+      } else if (state.csvUrl) {
         pill.classList.add("linked");
         pill.textContent = "Power Automate linked";
       } else {
@@ -1329,6 +1338,11 @@
     }
 
     function rowsToCsv() {
+      const metadata = [
+        ["#META","Custom Amount",state.customAmount || 0],
+        ["#META","Total Sales Achievement",state.salesAchievement || 0],
+        ["#META","Total Target Quota",state.targetQuota || 0]
+      ];
       const header = ["Opportunity name","Domain","Opp size","AM","SE","Estimated completion date","Quarter","Quote number","PO number","Relevance","Notes"];
       const rows = state.rows.map(row => [
         row.name,
@@ -1343,7 +1357,7 @@
         row.relevance,
         row.notesHtml
       ]);
-      return [header, ...rows].map(values => values.map(csvEscape).join(",")).join("\n");
+      return [...metadata, header, ...rows].map(values => values.map(csvEscape).join(",")).join("\n");
     }
     function csvEscape(value) {
       const text = String(value ?? "");
@@ -1381,8 +1395,24 @@
     function normalizeHeader(header) { return String(header || "").toLowerCase().replace(/[^a-z0-9]/g, ""); }
     function csvToRows(text) {
       const parsed = parseCsv(text);
-      if (parsed.length < 2) return [];
-      const headers = parsed[0].map(normalizeHeader);
+      if (!parsed.length) return [];
+      let headerIndex = 0;
+      for (let i = 0; i < parsed.length; i++) {
+        const first = String(parsed[i][0] || "").trim();
+        if (first === "#META") {
+          const key = normalizeHeader(parsed[i][1]);
+          const value = parseMoney(parsed[i][2]);
+          if (key === "customamount") state.customAmount = value;
+          if (key === "totalsalesachievement" || key === "salesachievement") state.salesAchievement = value;
+          if (key === "totaltargetquota" || key === "targetquota") state.targetQuota = value;
+          headerIndex = i + 1;
+        } else {
+          headerIndex = i;
+          break;
+        }
+      }
+      if (parsed.length <= headerIndex) return [];
+      const headers = parsed[headerIndex].map(normalizeHeader);
       const index = names => names.map(normalizeHeader).map(name => headers.indexOf(name)).find(i => i >= 0);
       const idx = {
         name: index(["Opportunity name","Opportunity","Opp name","Name"]),
@@ -1395,29 +1425,116 @@
         quote: index(["Quote number","Quote #","Quote"]),
         po: index(["PO number","PO #","PO"]),
         relevance: index(["Relevance","Stage","Forecast category"]),
-        notes: index(["Notes","Note"])
+        notes: index(["Notes","Note"]),
+        customAmount: index(["Custom Amount"]),
+        salesAchievement: index(["Total Sales Achievement","Sales Achievement"]),
+        targetQuota: index(["Total Target Quota","Target Quota"])
       };
-      return parsed.slice(1).map(cells => {
-        const row = {
-          id: uid(),
-          name: cells[idx.name] || "",
-          domain: cells[idx.domain] || "RCMIN",
-          size: parseMoney(cells[idx.size]),
-          am: cells[idx.am] || "TBD",
-          se: cells[idx.se] || "Vlad",
-          date: cells[idx.date] || "",
-          quarter: cells[idx.quarter] || quarterFromDate(cells[idx.date] || ""),
-          quote: String(cells[idx.quote] || "").replace(/\D/g, ""),
-          po: String(cells[idx.po] || "").replace(/\D/g, ""),
-          relevance: RELEVANCE.includes(cells[idx.relevance]) ? cells[idx.relevance] : "Pipeline",
-          notesHtml: sanitizeNote(cells[idx.notes] || ""),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        if (!row.quarter || !["Q1","Q2","Q3","Q4"].includes(row.quarter)) row.quarter = quarterFromDate(row.date);
-        return row;
-      });
+      const dataRows = parsed.slice(headerIndex + 1);
+      const firstData = dataRows.find(cells => cells.some(cell => String(cell || "").trim()));
+      if (firstData) {
+        if (idx.customAmount >= 0) state.customAmount = parseMoney(firstData[idx.customAmount]);
+        if (idx.salesAchievement >= 0) state.salesAchievement = parseMoney(firstData[idx.salesAchievement]);
+        if (idx.targetQuota >= 0) state.targetQuota = parseMoney(firstData[idx.targetQuota]);
+      }
+      return dataRows
+        .filter(cells => cells.some(cell => String(cell || "").trim()))
+        .map(cells => {
+          const row = {
+            id: uid(),
+            name: cells[idx.name] || "",
+            domain: cells[idx.domain] || "RCMIN",
+            size: parseMoney(cells[idx.size]),
+            am: cells[idx.am] || "TBD",
+            se: cells[idx.se] || "Vlad",
+            date: cells[idx.date] || "",
+            quarter: cells[idx.quarter] || quarterFromDate(cells[idx.date] || ""),
+            quote: String(cells[idx.quote] || "").replace(/\D/g, ""),
+            po: String(cells[idx.po] || "").replace(/\D/g, ""),
+            relevance: RELEVANCE.includes(cells[idx.relevance]) ? cells[idx.relevance] : "Pipeline",
+            notesHtml: sanitizeNote(cells[idx.notes] || ""),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+          if (!row.quarter || !["Q1","Q2","Q3","Q4"].includes(row.quarter)) row.quarter = quarterFromDate(row.date);
+          return row;
+        });
     }
+    function scheduleAutoSave() {
+      const endpoint = ($("#writeUrlInput")?.value || state.writeUrl || $("#csvUrlInput")?.value || state.csvUrl || "").trim();
+      if (!endpoint && !localCsvHandle) return;
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(() => autoSaveCsv(), 1200);
+    }
+    async function autoSaveCsv() {
+      if (autoSaving) return;
+      autoSaving = true;
+      const pill = $("#syncStatus");
+      try {
+        if (localCsvHandle) {
+          await saveLinkedCsv(true);
+        }
+        const endpoint = ($("#writeUrlInput")?.value || state.writeUrl || $("#csvUrlInput")?.value || state.csvUrl || "").trim();
+        if (endpoint) {
+          pill.className = "sync-pill syncing";
+          pill.textContent = "Auto-saving CSV";
+          await callPowerAutomate(endpoint, { action: "write", csv: rowsToCsv() });
+          pill.className = "sync-pill linked";
+          pill.textContent = "CSV auto-saved";
+        }
+      } catch (error) {
+        pill.className = "sync-pill error";
+        pill.textContent = "Auto-save failed";
+        console.warn("Auto-save failed", error);
+      } finally {
+        autoSaving = false;
+      }
+    }
+    async function linkLocalCsv() {
+      if (!window.showOpenFilePicker) {
+        alert("Link Local CSV requires Chrome or Edge. Use Import/Export CSV in this browser.");
+        return;
+      }
+      try {
+        const [handle] = await window.showOpenFilePicker({
+          multiple: false,
+          types: [{ description: "CSV files", accept: { "text/csv": [".csv"] } }]
+        });
+        localCsvHandle = handle;
+        const file = await handle.getFile();
+        const text = await file.text();
+        state.rows = csvToRows(text);
+        state.domains = unique([...state.domains, ...state.rows.map(r => r.domain)]);
+        state.amOwners = unique([...state.amOwners, ...state.rows.map(r => r.am)]);
+        state.seOwners = unique([...state.seOwners, ...state.rows.map(r => r.se)]);
+        persist(true, false);
+        renderAll();
+        $("#syncStatus").className = "sync-pill linked";
+        $("#syncStatus").textContent = "Local CSV linked";
+      } catch (error) {
+        if (error?.name !== "AbortError") alert(`Could not link local CSV: ${error.message || error}`);
+      }
+    }
+    async function saveLinkedCsv(silent = false) {
+      if (!localCsvHandle) {
+        if (!silent) alert("No local CSV is linked yet. Click Link Local CSV first.");
+        return false;
+      }
+      try {
+        const writable = await localCsvHandle.createWritable();
+        await writable.write(rowsToCsv());
+        await writable.close();
+        const now = new Date();
+        $("#lastSavedPill").textContent = `Saved CSV ${now.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"})}`;
+        $("#syncStatus").className = "sync-pill linked";
+        $("#syncStatus").textContent = "Local CSV saved";
+        return true;
+      } catch (error) {
+        if (!silent) alert(`Could not save linked CSV: ${error.message || error}`);
+        throw error;
+      }
+    }
+
     async function callPowerAutomate(url, payload) {
       const res = await fetch(url, {
         method: "POST",
@@ -1478,7 +1595,7 @@
         state.domains = unique([...state.domains, ...state.rows.map(r => r.domain)]);
         state.amOwners = unique([...state.amOwners, ...state.rows.map(r => r.am)]);
         state.seOwners = unique([...state.seOwners, ...state.rows.map(r => r.se)]);
-        persist();
+        persist(true, false);
         renderAll();
         pill.className = "sync-pill linked";
         pill.textContent = "CSV pulled";
@@ -1497,28 +1614,33 @@
         state.domains = unique([...state.domains, ...state.rows.map(r => r.domain)]);
         state.amOwners = unique([...state.amOwners, ...state.rows.map(r => r.am)]);
         state.seOwners = unique([...state.seOwners, ...state.rows.map(r => r.se)]);
-        persist();
+        persist(true, false);
         renderAll();
       };
       reader.readAsText(file);
       event.target.value = "";
     }
-    async function pushCsv() {
+    async function pushCsv(silent = false) {
       const url = $("#writeUrlInput").value.trim() || $("#csvUrlInput").value.trim();
-      if (!url) return alert("Paste the Power Automate HTTP trigger URL first.");
+      if (!url) {
+        if (!silent) alert("Paste the Power Automate HTTP trigger URL first.");
+        return false;
+      }
       const pill = $("#syncStatus");
       pill.className = "sync-pill syncing";
       pill.textContent = "Saving CSV";
       try {
         await callPowerAutomate(url, { action: "write", csv: rowsToCsv() });
         state.csvUrl = $("#csvUrlInput").value.trim() || state.csvUrl;
-        persist(false);
+        persist(false, false);
         pill.className = "sync-pill linked";
         pill.textContent = "CSV saved";
+        return true;
       } catch (error) {
         pill.className = "sync-pill error";
         pill.textContent = "Save failed";
-        alert(`Could not save CSV through Power Automate. ${powerAutomateErrorMessage(error)}`);
+        if (!silent) alert(`Could not save CSV through Power Automate. ${powerAutomateErrorMessage(error)}`);
+        throw error;
       }
     }
   </script>
