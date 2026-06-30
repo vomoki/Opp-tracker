@@ -338,11 +338,28 @@
       text-transform: uppercase;
       white-space: nowrap;
     }
+    th.sortable {
+      cursor: pointer;
+      user-select: none;
+    }
+    th.sortable:hover { color: var(--accent); }
+    .sort-indicator {
+      display: inline-block;
+      margin-left: 0.16rem;
+      opacity: 0.58;
+      font-size: 0.58rem;
+    }
     [data-theme="dark"] th { background: rgba(10,20,48,0.98); }
     tr:last-child td { border-bottom: 0; }
     tbody tr:hover td { background: rgba(238,242,255,0.44); }
     [data-theme="dark"] tbody tr:hover td { background: rgba(80,130,220,0.08); }
-    .opp-row td { height: 44px; font-size: 0.69rem; }
+    .opp-row td { height: 46px; font-size: 0.69rem; }
+    .opp-row td:first-child {
+      border-left: 4px solid var(--warning);
+      padding-left: 0.35rem;
+    }
+    .opp-row.done-task td { opacity: 0.64; }
+    .opp-row.done-task .cell-text.strong { text-decoration: line-through; }
     .cell-text {
       display: block;
       min-width: 0;
@@ -354,6 +371,29 @@
     .cell-text.money { font-weight: 800; }
     .date-summary { display: flex; align-items: center; gap: 0.35rem; min-width: 0; }
     .date-summary .cell-text { flex: 1 1 auto; }
+    .select-cell { text-align: center; }
+    .row-checkbox {
+      appearance: none;
+      width: 26px;
+      height: 26px;
+      margin: 0;
+      border-radius: 8px;
+      border: 2px solid #b8c5d8;
+      background: rgba(255,255,255,0.92);
+      cursor: pointer;
+      display: inline-grid;
+      place-items: center;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
+      vertical-align: middle;
+    }
+    .row-checkbox:checked {
+      border-color: var(--accent);
+      background-color: var(--accent);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath fill='none' stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2.5 7.5 5.5 10.5 11.5 3.5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: 14px 14px;
+    }
     .inline-select {
       width: auto;
       min-width: 0;
@@ -380,17 +420,18 @@
     .row-actions .delete-btn { min-width: 38px; }
     .opp-row .pill { padding: 0.22rem 0.36rem; font-size: 0.56rem; }
     .date-summary { gap: 0.22rem; }
-    .col-name { width: 36%; }
+    .col-check { width: 3.5%; }
+    .col-name { width: 34%; }
     .col-domain { width: 5%; }
-    .col-size { width: 8%; }
-    .col-am { width: 4.5%; }
-    .col-se { width: 5%; }
-    .col-date { width: 7%; }
-    .col-quote { width: 5.5%; }
+    .col-size { width: 7%; }
+    .col-am { width: 4%; }
+    .col-se { width: 4.5%; }
+    .col-date { width: 6.5%; }
+    .col-quote { width: 5%; }
     .col-po { width: 5%; }
     .col-relevance { width: 7%; }
     .col-notes { width: 4.5%; }
-    .col-actions { width: 12.5%; }
+    .col-actions { width: 14%; }
     .note-row { display: none; }
     .note-row.open { display: table-row; }
     .note-panel { padding: 0.95rem; background: var(--metal-surface-soft); border-radius: 18px; border: 1px solid var(--border); }
@@ -589,7 +630,7 @@
         <div class="opportunities-title"><h2>Opportunities</h2><p class="muted" id="rowCount">0 opportunities</p></div>
         <div class="opportunities-controls" aria-label="Opportunity controls">
           <button class="icon" id="addOppToolbarBtn" title="Add opportunity" aria-label="Add opportunity">+</button>
-          <input class="search" id="searchInput" type="search" placeholder="Search opportunity, domain, owner, quote, PO, notes" />
+          <input class="search" id="searchInput" type="search" placeholder="Search opportunity, domain, owner, opp, quote, notes" />
           <select id="relevanceFilter" aria-label="Filter by relevance"><option value="all">All relevance</option></select>
           <select id="quarterFilter" aria-label="Filter by quarter"><option value="all">All quarters</option><option>Q1</option><option>Q2</option><option>Q3</option><option>Q4</option></select>
         </div>
@@ -598,6 +639,7 @@
       <div class="table-shell">
         <table>
           <colgroup>
+            <col class="col-check" />
             <col class="col-name" />
             <col class="col-domain" />
             <col class="col-size" />
@@ -612,15 +654,16 @@
           </colgroup>
           <thead>
             <tr>
-              <th>Opportunity</th>
-              <th>Domain</th>
-              <th>Opp size</th>
-              <th>AM</th>
-              <th>SE</th>
-              <th>Dates / Q</th>
-              <th>Quote #</th>
-              <th>PO #</th>
-              <th>Relevance</th>
+              <th></th>
+              <th class="sortable" data-sort="name">Opportunity <span class="sort-indicator"></span></th>
+              <th class="sortable" data-sort="domain">Domain <span class="sort-indicator"></span></th>
+              <th class="sortable" data-sort="size">Opp size <span class="sort-indicator"></span></th>
+              <th class="sortable" data-sort="am">AM <span class="sort-indicator"></span></th>
+              <th class="sortable" data-sort="se">SE <span class="sort-indicator"></span></th>
+              <th class="sortable" data-sort="date">Dates / Q <span class="sort-indicator"></span></th>
+              <th class="sortable" data-sort="quote">Opp # <span class="sort-indicator"></span></th>
+              <th class="sortable" data-sort="po">Quote # <span class="sort-indicator"></span></th>
+              <th class="sortable" data-sort="relevance">Relevance <span class="sort-indicator"></span></th>
               <th>Notes</th>
               <th>Actions</th>
             </tr>
@@ -675,10 +718,10 @@
             </label>
             <button class="ghost" id="modalPostponeBtn" type="button">Postpone date</button>
           </div>
-          <label>Quote number
+          <label>Opp #
             <input id="modalQuote" inputmode="numeric" pattern="[0-9]*" placeholder="Numbers only" />
           </label>
-          <label>PO number
+          <label>Quote #
             <input id="modalPo" inputmode="numeric" pattern="[0-9]*" placeholder="Numbers only" />
           </label>
           <label>Relevance
@@ -743,6 +786,7 @@
       csvUrl: "",
       writeUrl: "",
       expanded: {},
+      sort: { field: "", direction: "asc" },
       theme: "light"
     };
     let state = loadState();
@@ -784,6 +828,7 @@
     $("#searchInput").addEventListener("input", renderRows);
     $("#relevanceFilter").addEventListener("change", renderRows);
     $("#quarterFilter").addEventListener("change", renderRows);
+    document.querySelector("thead").addEventListener("click", handleHeaderSort);
     // Add new Domain / AM / SE is handled directly inside the popup dropdowns.
     $("#csvUrlInput").value = state.csvUrl || "";
     $("#writeUrlInput").value = state.writeUrl || "";
@@ -878,7 +923,8 @@
         quote: "",
         po: "",
         relevance: "Pipeline",
-        notesHtml: ""
+        notesHtml: "",
+        done: false
       };
       editingModalId = row ? row.id : null;
       refreshModalSelects(data);
@@ -964,6 +1010,7 @@
       if (!btn) return;
       const editor = $("#modalNotes");
       editor.focus();
+      event.preventDefault();
       document.execCommand(btn.dataset.modalCommand, false, btn.dataset.value || null);
     }
     function handleModalSelectChange(event) {
@@ -1102,11 +1149,44 @@
       const query = $("#searchInput").value.trim().toLowerCase();
       const relevance = $("#relevanceFilter").value;
       const quarter = $("#quarterFilter").value;
-      return state.rows.filter(row => {
+      const rows = state.rows.filter(row => {
         const haystack = [row.name,row.domain,row.am,row.se,row.quote,row.po,row.relevance,row.quarter,stripHtml(row.notesHtml)].join(" ").toLowerCase();
         return (!query || haystack.includes(query)) &&
                (relevance === "all" || row.relevance === relevance) &&
                (quarter === "all" || row.quarter === quarter);
+      });
+      return sortedRows(rows);
+    }
+    function sortedRows(rows) {
+      const sort = state.sort || {};
+      if (!sort.field) return rows;
+      const direction = sort.direction === "desc" ? -1 : 1;
+      const valueFor = row => {
+        if (sort.field === "size") return Number(row.size || 0);
+        if (sort.field === "date") return row.date || "";
+        return String(row[sort.field] ?? "").toLowerCase();
+      };
+      return [...rows].sort((a,b) => {
+        const av = valueFor(a);
+        const bv = valueFor(b);
+        if (typeof av === "number" && typeof bv === "number") return (av - bv) * direction;
+        return String(av).localeCompare(String(bv), undefined, {numeric:true, sensitivity:"base"}) * direction;
+      });
+    }
+    function handleHeaderSort(event) {
+      const th = event.target.closest("th.sortable");
+      if (!th) return;
+      const field = th.dataset.sort;
+      if (!state.sort || state.sort.field !== field) state.sort = {field, direction:"asc"};
+      else state.sort.direction = state.sort.direction === "asc" ? "desc" : "asc";
+      persist(false, false);
+      renderRows();
+    }
+    function updateSortIndicators() {
+      document.querySelectorAll("th.sortable").forEach(th => {
+        const indicator = th.querySelector(".sort-indicator");
+        if (!indicator) return;
+        indicator.textContent = state.sort && state.sort.field === th.dataset.sort ? (state.sort.direction === "desc" ? "↓" : "↑") : "";
       });
     }
     function renderRows() {
@@ -1114,13 +1194,15 @@
       $("#rowCount").textContent = `${state.rows.length} opportunities${rows.length !== state.rows.length ? ` / ${rows.length} shown` : ""}`;
       $("#emptyState").classList.toggle("hidden", state.rows.length > 0);
       body.innerHTML = rows.map(row => renderRow(row)).join("");
+      updateSortIndicators();
     }
     function renderRow(row) {
       const open = !!state.expanded[row.id];
       const quarter = row.quarter || quarterFromDate(row.date);
       const notesLabel = open ? "Hide" : (stripHtml(row.notesHtml || "") ? "View" : "Add");
       return `
-        <tr class="opp-row" data-id="${row.id}">
+        <tr class="opp-row ${row.done ? "done-task" : ""}" data-id="${row.id}">
+          <td class="select-cell"><input class="row-checkbox" type="checkbox" data-id="${escapeHtml(row.id)}" data-field="done" aria-label="Mark opportunity" ${row.done ? "checked" : ""} /></td>
           <td title="${escapeHtml(row.name || "")}"><span class="cell-text strong">${escapeHtml(row.name || "—")}</span></td>
           <td title="${escapeHtml(row.domain || "")}"><span class="cell-text">${escapeHtml(row.domain || "—")}</span></td>
           <td><span class="cell-text money">${money(row.size || 0)}</span></td>
@@ -1134,7 +1216,7 @@
           <td><div class="row-actions"><button class="ghost tiny edit-btn" data-id="${row.id}" type="button">Edit</button><button class="ghost tiny duplicate-btn" data-id="${row.id}" type="button">Copy</button><button class="danger tiny delete-btn" data-id="${row.id}" type="button">Delete</button></div></td>
         </tr>
         <tr class="note-row ${open ? "open" : ""}" data-note-row="${row.id}">
-          <td colspan="11">
+          <td colspan="12">
             <div class="note-panel">
               ${$("#noteToolbarTemplate").innerHTML}
               <div class="note-editor" data-id="${row.id}" contenteditable="true">${sanitizeNote(row.notesHtml || "")}</div>
@@ -1183,6 +1265,13 @@
       const id = target.dataset.id;
       const row = getRow(id);
       if (!row) return;
+      if (target.dataset.field === "done") {
+        row.done = !!target.checked;
+        row.updatedAt = new Date().toISOString();
+        persist();
+        renderRows();
+        return;
+      }
       if (target.dataset.field === "date") {
         row.date = target.value;
         row.quarter = quarterFromDate(target.value);
@@ -1225,8 +1314,9 @@
         const panel = noteCommandBtn.closest(".note-panel");
         const editor = panel.querySelector(".note-editor");
         editor.focus();
+        event.preventDefault();
         document.execCommand(noteCommandBtn.dataset.command, false, noteCommandBtn.dataset.value || null);
-        saveNote(editor);
+        setTimeout(() => saveNote(editor), 0);
         return;
       }
       const idBtn = event.target.closest("button[data-id]");
@@ -1255,7 +1345,7 @@
       if (idBtn.classList.contains("duplicate-btn")) {
         const row = getRow(id);
         if (!row) return;
-        state.rows.unshift({...row, id: uid(), quote: "", po: "", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()});
+        state.rows.unshift({...row, id: uid(), quote: "", po: "", done: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()});
         persist();
         renderAll();
         return;
@@ -1324,7 +1414,23 @@
     function sanitizeNote(html) {
       const template = document.createElement("template");
       template.innerHTML = html || "";
-      const allowed = new Set(["B","STRONG","I","EM","U","UL","OL","LI","P","DIV","BR","SPAN","H1","H2","H3"]);
+      const allowed = new Set(["B","STRONG","I","EM","U","UL","OL","LI","P","DIV","BR","SPAN","H1","H2","H3","FONT"]);
+      const isSafeColor = value => {
+        const color = String(value || "").trim();
+        return /^(#[0-9a-f]{3,8}|rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)|rgba\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*(0|1|0?\.\d+)\s*\))$/i.test(color);
+      };
+      const copySafeStyles = (source, target) => {
+        const color = source.style?.color || source.getAttribute?.("color") || "";
+        if (isSafeColor(color)) target.style.color = color;
+        const bg = source.style?.backgroundColor || "";
+        if (isSafeColor(bg)) target.style.backgroundColor = bg;
+        const fontWeight = source.style?.fontWeight || "";
+        if (/^(bold|bolder|[1-9]00)$/i.test(fontWeight)) target.style.fontWeight = fontWeight;
+        const fontStyle = source.style?.fontStyle || "";
+        if (/^italic$/i.test(fontStyle)) target.style.fontStyle = "italic";
+        const decoration = `${source.style?.textDecoration || ""} ${source.style?.textDecorationLine || ""}`;
+        if (/underline/i.test(decoration)) target.style.textDecoration = "underline";
+      };
       const cleanNode = node => {
         if (node.nodeType === Node.TEXT_NODE) return document.createTextNode(node.textContent);
         if (node.nodeType !== Node.ELEMENT_NODE) return document.createTextNode("");
@@ -1335,11 +1441,9 @@
           children.forEach(child => frag.appendChild(child));
           return frag;
         }
-        const el = document.createElement(tag.toLowerCase());
-        if (tag === "SPAN") {
-          const color = node.style.color;
-          if (/^(#[0-9a-f]{3,6}|rgb\(\d{1,3},\s*\d{1,3},\s*\d{1,3}\))$/i.test(color)) el.style.color = color;
-        }
+        const outputTag = tag === "FONT" ? "span" : tag.toLowerCase();
+        const el = document.createElement(outputTag);
+        copySafeStyles(node, el);
         children.forEach(child => el.appendChild(child));
         return el;
       };
@@ -1359,8 +1463,9 @@
         ["#META","Total Sales Achievement",state.salesAchievement || 0],
         ["#META","Total Target Quota",state.targetQuota || 0]
       ];
-      const header = ["Opportunity name","Domain","Opp size","AM","SE","Estimated completion date","Quarter","Quote number","PO number","Relevance","Notes"];
+      const header = ["Done","Opportunity name","Domain","Opp size","AM","SE","Estimated completion date","Quarter","Opp number","Quote number","Relevance","Notes"];
       const rows = state.rows.map(row => [
+        row.done ? "TRUE" : "",
         row.name,
         row.domain,
         row.size,
@@ -1430,7 +1535,11 @@
       if (parsed.length <= headerIndex) return [];
       const headers = parsed[headerIndex].map(normalizeHeader);
       const index = names => names.map(normalizeHeader).map(name => headers.indexOf(name)).find(i => i >= 0);
+      const oppNumberIdx = index(["Opp number","Opp #","Opportunity number","Opportunity #"]);
+      const quoteNumberIdx = index(["Quote number","Quote #","Quote"]);
+      const oldPoIdx = index(["PO number","PO #","PO"]);
       const idx = {
+        done: index(["Done","Completed","Complete"]),
         name: index(["Opportunity name","Opportunity","Opp name","Name"]),
         domain: index(["Domain"]),
         size: index(["Opp size","Opportunity size","Size","Amount"]),
@@ -1438,8 +1547,8 @@
         se: index(["SE","Owner SE","Sales Engineer"]),
         date: index(["Estimated completion date","Completion date","Date"]),
         quarter: index(["Quarter","Q"]),
-        quote: index(["Quote number","Quote #","Quote"]),
-        po: index(["PO number","PO #","PO"]),
+        quote: oppNumberIdx >= 0 ? oppNumberIdx : quoteNumberIdx,
+        po: oppNumberIdx >= 0 ? quoteNumberIdx : oldPoIdx,
         relevance: index(["Relevance","Stage","Forecast category"]),
         notes: index(["Notes","Note"]),
         customAmount: index(["Custom Amount"]),
@@ -1458,6 +1567,7 @@
         .map(cells => {
           const row = {
             id: uid(),
+            done: /^(true|yes|1|x|done)$/i.test(String(cells[idx.done] || "")),
             name: cells[idx.name] || "",
             domain: cells[idx.domain] || "RCMIN",
             size: parseMoney(cells[idx.size]),
