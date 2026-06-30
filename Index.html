@@ -1,0 +1,1664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Opportunity Dashboard</title>
+  <style>
+    :root {
+      --bg: #f4f6f9;
+      --panel: #ffffff;
+      --panel-alt: #eceef2;
+      --border: #d8dfeb;
+      --text: #1c2536;
+      --muted: #6b7a99;
+      --accent: #3b5bdb;
+      --accent-soft: #eef2ff;
+      --danger: #c0392b;
+      --success: #166534;
+      --warning: #b45309;
+      --metal-surface: linear-gradient(180deg,#f3f6fa 0%,#e6ebf2 22%,#d6dee8 58%,#cbd5e1 100%);
+      --metal-surface-strong: linear-gradient(180deg,#f7f9fc 0%,#e8edf4 18%,#d7e0ea 52%,#c6d0dc 100%);
+      --metal-surface-soft: linear-gradient(180deg,#eef2f7 0%,#dfe6ee 30%,#ced8e4 100%);
+      --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.06);
+      --shadow-lg: 0 18px 38px rgba(28,37,54,0.08);
+      --radius: 22px;
+    }
+    [data-theme="dark"] {
+      --bg: #080e1c;
+      --panel: rgba(12,22,48,0.95);
+      --panel-alt: rgba(17,30,60,0.9);
+      --border: rgba(80,120,200,0.25);
+      --text: #e8eeff;
+      --muted: #8ca8cd;
+      --accent: #5c7cfa;
+      --accent-soft: rgba(92,124,250,0.14);
+      --danger: #ff8b8b;
+      --success: #80d8a8;
+      --warning: #f0c070;
+      --metal-surface: linear-gradient(180deg,rgba(20,33,62,0.98) 0%,rgba(15,26,50,0.96) 30%,rgba(10,20,41,0.98) 100%);
+      --metal-surface-strong: linear-gradient(180deg,rgba(24,38,70,1) 0%,rgba(16,28,53,0.98) 36%,rgba(10,20,40,1) 100%);
+      --metal-surface-soft: linear-gradient(180deg,rgba(25,39,72,0.94) 0%,rgba(15,27,52,0.94) 100%);
+      --shadow: 0 16px 48px rgba(10,20,60,0.7);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Inter","Plus Jakarta Sans","Segoe UI",sans-serif;
+      color: var(--text);
+      line-height: 1.55;
+      background:
+        radial-gradient(circle at 12% 8%,rgba(59,91,219,0.07),transparent 24%),
+        radial-gradient(circle at 88% 10%,rgba(148,163,184,0.12),transparent 22%),
+        linear-gradient(180deg,#f8fafc 0%,var(--bg) 58%,#eef2f7 100%);
+      min-height: 100vh;
+    }
+    [data-theme="dark"] body {
+      background:
+        radial-gradient(ellipse at 20% 10%,rgba(40,80,180,0.28) 0%,transparent 50%),
+        radial-gradient(ellipse at 80% 90%,rgba(20,50,130,0.22) 0%,transparent 50%),
+        linear-gradient(180deg,#060c1a 0%,#080e20 100%);
+    }
+    button,input,textarea,select { font: inherit; }
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 0.72rem 1.05rem;
+      background: var(--accent);
+      color: white;
+      cursor: pointer;
+      transition: transform 140ms ease, opacity 140ms ease, background 140ms ease, box-shadow 140ms ease;
+      box-shadow: 0 8px 18px rgba(59,91,219,0.16);
+      white-space: nowrap;
+    }
+    button:hover { transform: translateY(-1px); }
+    button.ghost {
+      background: rgba(255,255,255,0.82);
+      color: var(--text);
+      border: 1px solid var(--border);
+      box-shadow: none;
+    }
+    [data-theme="dark"] button.ghost { background: rgba(15,28,60,0.72); color: #c8dcff; }
+    button.icon {
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      display: inline-grid;
+      place-items: center;
+      font-size: 1.2rem;
+      font-weight: 700;
+      flex: 0 0 auto;
+    }
+    button.tiny { padding: 0.42rem 0.7rem; font-size: 0.78rem; }
+    button.danger { background: var(--danger); }
+    button:disabled { opacity: 0.58; cursor: not-allowed; }
+    input,select,textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 0.72rem 0.82rem;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+    }
+    [data-theme="dark"] input,
+    [data-theme="dark"] select,
+    [data-theme="dark"] textarea {
+      background: rgba(15,28,60,0.9);
+      color: var(--text);
+      border-color: rgba(80,120,200,0.3);
+    }
+    label { display: grid; gap: 0.35rem; color: var(--muted); font-size: 0.78rem; font-weight: 600; }
+    .app-shell { width: min(1500px,100%); margin: 0 auto; padding: 1.75rem 2rem 4rem; }
+    .topbar {
+      margin-bottom: 1rem;
+      padding: 0.75rem 0.95rem;
+      border-radius: calc(var(--radius) + 2px);
+      border: 1px solid rgba(216,223,235,0.94);
+      background:
+        radial-gradient(circle at top right,rgba(59,91,219,0.08),transparent 34%),
+        linear-gradient(180deg,rgba(255,255,255,0.98),rgba(247,249,252,0.96));
+      box-shadow: var(--shadow-lg);
+      backdrop-filter: blur(14px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.8rem;
+    }
+    [data-theme="dark"] .topbar {
+      background: linear-gradient(135deg,rgba(10,20,46,0.92),rgba(15,28,60,0.86));
+      border-color: rgba(80,120,200,0.22);
+    }
+    .eyebrow { margin: 0 0 0.32rem; text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.625rem; font-weight: 700; color: var(--muted); }
+    h1,h2,h3,p { margin: 0; }
+    h1 { font-size: clamp(1.55rem,3vw,2.15rem); font-weight: 700; line-height: 1.02; color: var(--text); letter-spacing: -0.035em; }
+    .subtitle { display: none; }
+    .header-main { min-width: 0; flex: 1 1 auto; }
+    .header-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.45rem; align-items: center; }
+    .header-actions button { padding: 0.56rem 0.78rem; font-size: 0.78rem; }
+    .header-actions button.icon { width: 34px; height: 34px; font-size: 1rem; }
+    .title-metrics {
+      display: grid;
+      grid-template-columns: minmax(170px,220px) minmax(170px,220px) minmax(120px,160px);
+      gap: 0.45rem;
+      margin-top: 0.45rem;
+      max-width: 640px;
+    }
+    .title-metric {
+      background: rgba(255,255,255,0.72);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 0.38rem 0.52rem;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+    }
+    [data-theme="dark"] .title-metric { background: rgba(15,28,60,0.52); }
+    .title-metric label,
+    .title-metric span:first-child {
+      display: block;
+      color: var(--muted);
+      font-size: 0.62rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.24rem;
+    }
+    .title-metric input {
+      height: 26px;
+      padding: 0.22rem 0.44rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 800;
+    }
+    .title-metric strong {
+      display: block;
+      font-size: 1rem;
+      line-height: 26px;
+      letter-spacing: -0.02em;
+    }
+    .sync-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.52rem 0.76rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.72);
+      border: 1px solid rgba(216,223,235,0.94);
+      color: var(--muted);
+      font-size: 0.8rem;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.65);
+    }
+    .sync-pill::before { content: ""; width: 0.55rem; height: 0.55rem; border-radius: 50%; background: currentColor; opacity: 0.85; }
+    .sync-pill.linked { color: var(--success); }
+    .sync-pill.syncing { color: var(--warning); }
+    .sync-pill.error { color: var(--danger); }
+    .panel {
+      background: var(--metal-surface);
+      border: 1px solid rgba(216,223,235,0.94);
+      border-radius: var(--radius);
+      padding: 1.2rem;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.98),
+        inset 0 -1px 0 rgba(201,210,223,0.65),
+        0 1px 3px rgba(0,0,0,0.08),
+        0 4px 12px rgba(0,0,0,0.06);
+      backdrop-filter: blur(10px);
+    }
+    [data-theme="dark"] .panel { border-color: rgba(80,120,200,0.18); }
+    .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+    .panel-head h2 { font-size: 1.08rem; font-weight: 700; }
+    .muted { color: var(--muted); }
+    .toolbar {
+      position: sticky;
+      top: 1rem;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.65rem;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      background: rgba(255,255,255,0.9);
+      border: 1px solid rgba(216,223,235,0.92);
+      border-radius: 22px;
+      padding: 0.6rem 0.8rem;
+      margin-bottom: 1.25rem;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+      scrollbar-width: thin;
+    }
+    [data-theme="dark"] .toolbar { background: rgba(10,20,48,0.85); border-color: rgba(80,120,200,0.2); }
+    .toolbar-group { display: flex; align-items: center; gap: 0.45rem; flex-wrap: nowrap; flex: 0 0 auto; }
+    .toolbar-group.filters { min-width: max-content; }
+    .toolbar select { width: 170px; min-width: 170px; padding-block: 0.58rem; }
+    .search { min-width: 320px; width: 320px; border-radius: 999px; padding-block: 0.58rem; }
+    .opportunities-head {
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+      flex-wrap: nowrap;
+    }
+    .opportunities-title { flex: 0 0 auto; min-width: 126px; }
+    .opportunities-title h2 { line-height: 1.15; }
+    .opportunities-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.42rem;
+      min-width: 0;
+      flex: 1 1 auto;
+      overflow-x: auto;
+      scrollbar-width: thin;
+      padding: 0.05rem 0;
+    }
+    .opportunities-controls .search {
+      min-width: 260px;
+      width: 260px;
+      padding: 0.5rem 0.7rem;
+      font-size: 0.78rem;
+    }
+    .opportunities-controls select {
+      width: 140px;
+      min-width: 140px;
+      padding: 0.5rem 0.68rem;
+      font-size: 0.78rem;
+      border-radius: 999px;
+    }
+    .opportunities-controls button.icon {
+      width: 32px;
+      height: 32px;
+      font-size: 1rem;
+      flex: 0 0 auto;
+    }
+    .opportunities-save { flex: 0 0 auto; }
+    .achievement-panel { margin-bottom: 1rem; padding: 1rem; }
+    .stats-grid { display: grid; grid-template-columns: repeat(5,minmax(160px,1fr)); gap: 0.8rem; margin-bottom: 0.75rem; }
+    .stat-card {
+      min-height: 112px;
+      border-radius: 18px;
+      padding: 0.85rem;
+      background: var(--metal-surface-strong);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card::after {
+      content: "";
+      position: absolute;
+      inset: auto -20% -46% 30%;
+      height: 120px;
+      background: radial-gradient(circle,rgba(59,91,219,0.15),transparent 62%);
+      pointer-events: none;
+    }
+    .stat-label { color: var(--muted); font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+    .stat-value { font-size: clamp(1.2rem,2.2vw,2rem); font-weight: 800; letter-spacing: -0.03em; position: relative; z-index: 1; }
+    .stat-sub { color: var(--muted); font-size: 0.82rem; position: relative; z-index: 1; }
+    .custom-amount-card input { margin-top: 0.6rem; font-weight: 800; font-size: 1.1rem; }
+    .quarter-block { padding-top: 0.55rem; border-top: 1px solid rgba(216,223,235,0.74); }
+    .quarter-block .panel-head { margin-bottom: 0.65rem; }
+    .quarter-grid { display: grid; grid-template-columns: repeat(4,minmax(150px,1fr)); gap: 0.8rem; margin-bottom: 0; }
+    .quarter-card { border-radius: 16px; padding: 0.78rem; background: rgba(255,255,255,0.62); border: 1px solid var(--border); box-shadow: inset 0 1px 0 rgba(255,255,255,0.8); }
+    [data-theme="dark"] .quarter-card { background: rgba(15,28,60,0.52); }
+    .quarter-card strong { display: block; font-size: 1.25rem; margin-top: 0.28rem; letter-spacing: -0.03em; }
+    .sync-grid { display: none; grid-template-columns: 1fr; gap: 0.8rem; align-items: end; margin-bottom: 1rem; }
+    .sync-grid.open { display: grid; }
+    .sync-help { grid-column: 1/-1; color: var(--muted); font-size: 0.84rem; background: rgba(255,255,255,0.55); border: 1px dashed var(--border); padding: 0.8rem; border-radius: 16px; }
+    [data-theme="dark"] .sync-help { background: rgba(15,28,60,0.52); }
+    .table-shell {
+      overflow-x: hidden;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.68);
+    }
+    [data-theme="dark"] .table-shell { background: rgba(12,22,48,0.55); }
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      table-layout: fixed;
+      min-width: 0;
+    }
+    th,td {
+      padding: 0.42rem 0.30rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+      text-align: left;
+      line-height: 1.2;
+    }
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 15;
+      background: rgba(247,249,252,0.98);
+      color: var(--muted);
+      font-size: 0.54rem;
+      letter-spacing: 0.045em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    [data-theme="dark"] th { background: rgba(10,20,48,0.98); }
+    tr:last-child td { border-bottom: 0; }
+    tbody tr:hover td { background: rgba(238,242,255,0.44); }
+    [data-theme="dark"] tbody tr:hover td { background: rgba(80,130,220,0.08); }
+    .opp-row td { height: 44px; font-size: 0.69rem; }
+    .cell-text {
+      display: block;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .cell-text.strong { font-weight: 700; color: var(--text); font-size: 0.68rem; letter-spacing: -0.01em; }
+    .cell-text.money { font-weight: 800; }
+    .date-summary { display: flex; align-items: center; gap: 0.35rem; min-width: 0; }
+    .date-summary .cell-text { flex: 1 1 auto; }
+    .inline-select {
+      width: auto;
+      min-width: 0;
+      border-radius: 999px;
+      padding: 0.20rem 1.15rem 0.20rem 0.46rem;
+      font-size: 0.56rem;
+      line-height: 1.15;
+      font-weight: 700;
+      border: 1px solid var(--border);
+      background-color: rgba(255,255,255,0.88);
+      color: var(--text);
+      box-shadow: none;
+    }
+    .quarter-inline { width: 48px; color: #3b5bdb; border-color: rgba(59,91,219,0.22); background-color: #eef2ff; }
+    .relevance-inline { width: 94px; max-width: 94px; }
+    [data-theme="dark"] .inline-select { background-color: rgba(15,28,60,0.88); color: var(--text); border-color: rgba(80,120,200,0.28); }
+    .row-actions { display: flex; align-items: center; gap: 0.14rem; justify-content: flex-start; white-space: nowrap; }
+    .row-actions .tiny,
+    .toggle-note-btn { padding: 0.24rem 0.34rem; font-size: 0.57rem; }
+    .notes-cell { text-align: left; }
+    .notes-cell .toggle-note-btn { min-width: 36px; }
+
+    .row-actions .tiny { min-width: 30px; }
+    .row-actions .delete-btn { min-width: 38px; }
+    .opp-row .pill { padding: 0.22rem 0.36rem; font-size: 0.56rem; }
+    .date-summary { gap: 0.22rem; }
+    .col-name { width: 36%; }
+    .col-domain { width: 5%; }
+    .col-size { width: 8%; }
+    .col-am { width: 4.5%; }
+    .col-se { width: 5%; }
+    .col-date { width: 7%; }
+    .col-quote { width: 5.5%; }
+    .col-po { width: 5%; }
+    .col-relevance { width: 7%; }
+    .col-notes { width: 4.5%; }
+    .col-actions { width: 12.5%; }
+    .note-row { display: none; }
+    .note-row.open { display: table-row; }
+    .note-panel { padding: 0.95rem; background: var(--metal-surface-soft); border-radius: 18px; border: 1px solid var(--border); }
+    .note-toolbar { display: flex; flex-wrap: wrap; gap: 0.42rem; margin-bottom: 0.65rem; }
+    .note-toolbar button { padding: 0.42rem 0.62rem; font-size: 0.78rem; }
+    .note-toolbar .swatch { width: 32px; min-width: 32px; height: 32px; padding: 0; border-radius: 50%; border: 1px solid var(--border); box-shadow: none; }
+    .swatch.blue { background: #2f6fd6; }
+    .swatch.red { background: #c23434; }
+    .swatch.orange { background: #d97917; }
+    .swatch.green { background: #3d8a42; }
+    .note-editor {
+      width: 100%;
+      min-height: 120px;
+      max-height: 320px;
+      overflow: auto;
+      padding: 0.85rem;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: linear-gradient(180deg,#ffffff 0%,#f7f9fc 100%);
+      color: var(--text);
+      outline: none;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.96), inset 0 -1px 0 rgba(207,216,228,0.45);
+    }
+    [data-theme="dark"] .note-editor { background: rgba(15,28,60,0.9); }
+    .note-editor:empty::before { content: "Add notes, next steps, risks, decision status..."; color: var(--muted); }
+    .pill { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.32rem 0.58rem; border-radius: 999px; font-size: 0.76rem; font-weight: 700; background: var(--accent-soft); color: var(--accent); border: 1px solid rgba(59,91,219,0.14); }
+    .pill.closed { background: #dcfce7; color: #166534; }
+    .pill.committed { background: #dbeafe; color: #1d4ed8; }
+    .pill.strong-upside { background: #fef3c7; color: #92400e; }
+    .pill.upside { background: #ede9fe; color: #6d28d9; }
+    .pill.pipeline { background: #f1f5f9; color: #475569; }
+    .empty-state { margin: 1rem 0 0; border: 1px dashed var(--border); border-radius: 18px; padding: 1.2rem; text-align: center; color: var(--muted); background: rgba(255,255,255,0.45); }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+      background: rgba(15,23,42,0.38);
+      backdrop-filter: blur(8px);
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-card {
+      width: min(980px,100%);
+      max-height: min(88vh,920px);
+      overflow: auto;
+      padding: 0;
+      background: var(--metal-surface-strong);
+      animation: modalPop 140ms ease-out;
+    }
+    @keyframes modalPop {
+      from { opacity: 0; transform: translateY(8px) scale(0.99); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .modal-head {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1.05rem 1.15rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(247,249,252,0.96);
+      backdrop-filter: blur(12px);
+    }
+    [data-theme="dark"] .modal-head { background: rgba(10,20,48,0.96); }
+    .modal-title { font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em; }
+    .modal-body { padding: 1.15rem; }
+    .modal-form { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; }
+    .modal-form .full { grid-column: 1 / -1; }
+    .postpone-modal {
+      display: grid;
+      grid-template-columns: minmax(100px,160px) minmax(120px,160px) auto;
+      gap: 0.7rem;
+      align-items: end;
+      padding: 0.75rem;
+      border: 1px dashed var(--border);
+      border-radius: 16px;
+      background: rgba(255,255,255,0.45);
+    }
+    [data-theme="dark"] .postpone-modal { background: rgba(15,28,60,0.45); }
+    .modal-note-panel { padding: 0.9rem; background: var(--metal-surface-soft); border: 1px solid var(--border); border-radius: 18px; }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+    .modal-hint { color: var(--muted); font-size: 0.82rem; margin-top: 0.15rem; }
+    @media (max-width: 760px) {
+      .modal-form { grid-template-columns: 1fr; }
+      .postpone-modal { grid-template-columns: 1fr; }
+      .modal-backdrop { align-items: stretch; padding: 0.75rem; }
+      .modal-card { max-height: 96vh; }
+    }
+    .hidden { display: none !important; }
+    .file-input { display: none; }
+    @media (max-width: 1180px) {
+      .app-shell { padding-inline: 1rem; }
+      th { font-size: 0.58rem; }
+      .opp-row td { font-size: 0.66rem; }
+      .row-actions .tiny, .toggle-note-btn { padding: 0.22rem 0.30rem; font-size: 0.56rem; }
+      .pill { padding: 0.24rem 0.42rem; font-size: 0.64rem; }
+    }
+    @media (max-width: 1100px) {
+      .stats-grid { grid-template-columns: repeat(2,minmax(160px,1fr)); }
+      .quarter-grid { grid-template-columns: repeat(2,minmax(150px,1fr)); }
+      .sync-grid { grid-template-columns: 1fr; }
+      .topbar { flex-direction: column; align-items: stretch; }
+      .header-actions { justify-content: flex-start; }
+      .title-metrics { grid-template-columns: 1fr; max-width: none; }
+      th { top: 0; }
+    }
+    @media (max-width: 720px) {
+      .app-shell { padding: 1rem; }
+      .stats-grid,.quarter-grid { grid-template-columns: 1fr; }
+      .toolbar { position: relative; top: 0; }
+      .search { min-width: 220px; width: 220px; }
+      .toolbar select { min-width: 140px; width: 140px; }
+      .opportunities-head { flex-wrap: wrap; align-items: flex-start; }
+      .opportunities-controls { order: 3; flex-basis: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="header-main">
+        <p class="eyebrow">Sales command center</p>
+        <h1>Opportunity Dashboard</h1>
+        <div class="title-metrics" aria-label="Sales achievement versus quota">
+          <div class="title-metric">
+            <label for="salesAchievementInput">Total Sales Achievement</label>
+            <input id="salesAchievementInput" inputmode="numeric" placeholder="$0" />
+          </div>
+          <div class="title-metric">
+            <label for="targetQuotaInput">Total Target Quota</label>
+            <input id="targetQuotaInput" inputmode="numeric" placeholder="$0" />
+          </div>
+          <div class="title-metric">
+            <span>Achievement %</span>
+            <strong id="achievementPercent">0%</strong>
+          </div>
+        </div>
+        <p class="subtitle">Track committed forecast, strong upside, pipeline, owners, dates, quotes, POs, expandable notes, and CSV-based updates.</p>
+      </div>
+      <div class="header-actions">
+        <span class="sync-pill local" id="syncStatus">Local only</span>
+        <button class="ghost" id="syncToggleBtn">CSV Sync</button>
+        <button class="ghost" id="themeBtn">🌙 Dark</button>
+        <button class="icon" id="addOppBtn" title="Add opportunity" aria-label="Add opportunity">+</button>
+      </div>
+    </header>
+
+    <section class="sync-grid panel" id="syncPanel">
+      <input class="hidden" id="csvUrlInput" type="url" />
+      <input class="hidden" id="writeUrlInput" type="url" />
+      <button class="hidden" id="loadCsvUrlBtn" type="button">Pull CSV</button>
+      <button class="hidden" id="pushCsvBtn" type="button">Save CSV</button>
+      <button class="hidden" id="testFlowBtn" type="button">Test Flow</button>
+      <div class="toolbar-group">
+        <button class="ghost" id="linkLocalCsvBtn">Link Local CSV</button>
+        <button class="ghost" id="saveLocalCsvBtn">Save Linked CSV</button>
+        <button class="ghost" id="exportCsvBtn">Export CSV</button>
+        <button class="ghost" id="importCsvBtn">Import CSV</button>
+        <input class="file-input" id="importCsvFile" type="file" accept=".csv,text/csv" />
+      </div>
+      <div class="sync-help">
+        Use Link Local CSV with a OneDrive-synced CSV file. After linking, changes are auto-saved back to that CSV, and OneDrive will sync it to the shared folder.
+      </div>
+    </section>
+
+    <section class="panel achievement-panel" aria-label="Sales achievement summary">
+      <div class="stats-grid">
+        <article class="stat-card"><span class="stat-label">Committed</span><strong class="stat-value" id="committedTotal">$0</strong><span class="stat-sub">Closed + Committed</span></article>
+        <article class="stat-card"><span class="stat-label">Strong Upside</span><strong class="stat-value" id="strongUpsideTotal">$0</strong><span class="stat-sub">Strong Upside only</span></article>
+        <article class="stat-card"><span class="stat-label">Pipeline</span><strong class="stat-value" id="pipelineTotal">$0</strong><span class="stat-sub">Upside + Pipeline</span></article>
+        <article class="stat-card custom-amount-card"><span class="stat-label">Custom Amount</span><input id="customAmountInput" inputmode="numeric" placeholder="$0" /><span class="stat-sub">Editable, included in total</span></article>
+        <article class="stat-card"><span class="stat-label">Total Achievement</span><strong class="stat-value" id="grandTotal">$0</strong><span class="stat-sub">Committed + custom amount</span></article>
+      </div>
+      <div class="quarter-block">
+        <div class="panel-head"><div><h2>Quarter calculation</h2><p class="muted">Calculated by committed opportunities only, without the editable custom amount.</p></div></div>
+        <div class="quarter-grid" id="quarterGrid"></div>
+      </div>
+    </section>
+
+    <main class="panel">
+      <div class="panel-head opportunities-head">
+        <div class="opportunities-title"><h2>Opportunities</h2><p class="muted" id="rowCount">0 opportunities</p></div>
+        <div class="opportunities-controls" aria-label="Opportunity controls">
+          <button class="icon" id="addOppToolbarBtn" title="Add opportunity" aria-label="Add opportunity">+</button>
+          <input class="search" id="searchInput" type="search" placeholder="Search opportunity, domain, owner, quote, PO, notes" />
+          <select id="relevanceFilter" aria-label="Filter by relevance"><option value="all">All relevance</option></select>
+          <select id="quarterFilter" aria-label="Filter by quarter"><option value="all">All quarters</option><option>Q1</option><option>Q2</option><option>Q3</option><option>Q4</option></select>
+        </div>
+        <span class="pill opportunities-save" id="lastSavedPill">Not saved yet</span>
+      </div>
+      <div class="table-shell">
+        <table>
+          <colgroup>
+            <col class="col-name" />
+            <col class="col-domain" />
+            <col class="col-size" />
+            <col class="col-am" />
+            <col class="col-se" />
+            <col class="col-date" />
+            <col class="col-quote" />
+            <col class="col-po" />
+            <col class="col-relevance" />
+            <col class="col-notes" />
+            <col class="col-actions" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Opportunity</th>
+              <th>Domain</th>
+              <th>Opp size</th>
+              <th>AM</th>
+              <th>SE</th>
+              <th>Dates / Q</th>
+              <th>Quote #</th>
+              <th>PO #</th>
+              <th>Relevance</th>
+              <th>Notes</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="opportunityBody"></tbody>
+        </table>
+      </div>
+      <div class="empty-state hidden" id="emptyState">No opportunities yet. Click the + button to add the first one.</div>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="oppModal" role="dialog" aria-modal="true" aria-labelledby="oppModalTitle">
+    <section class="modal-card panel">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title" id="oppModalTitle">Add opportunity</div>
+          <p class="modal-hint">Fill the opportunity details here. The row will be created only after you save.</p>
+        </div>
+        <button class="ghost icon" id="oppModalCloseBtn" type="button" aria-label="Close">×</button>
+      </div>
+      <div class="modal-body">
+        <form id="oppForm" class="modal-form">
+          <label class="full">Opportunity name
+            <input id="modalName" type="text" placeholder="Opportunity name / customer / project" required />
+          </label>
+          <label>Domain
+            <select id="modalDomain" required></select>
+          </label>
+          <label>Opp size
+            <input id="modalSize" inputmode="numeric" placeholder="$1,000,000" />
+          </label>
+          <label>AM owner
+            <select id="modalAm"></select>
+          </label>
+          <label>SE owner
+            <select id="modalSe"></select>
+          </label>
+          <label>Estimated completion date
+            <input id="modalDate" type="date" />
+          </label>
+          <label>Quarter
+            <select id="modalQuarter">
+              <option>Q1</option><option>Q2</option><option>Q3</option><option>Q4</option>
+            </select>
+          </label>
+          <div class="postpone-modal full">
+            <label>Postpone by
+              <input id="modalPostponeCount" inputmode="numeric" placeholder="#" />
+            </label>
+            <label>Unit
+              <select id="modalPostponeUnit"><option value="weeks">weeks</option><option value="months">months</option></select>
+            </label>
+            <button class="ghost" id="modalPostponeBtn" type="button">Postpone date</button>
+          </div>
+          <label>Quote number
+            <input id="modalQuote" inputmode="numeric" pattern="[0-9]*" placeholder="Numbers only" />
+          </label>
+          <label>PO number
+            <input id="modalPo" inputmode="numeric" pattern="[0-9]*" placeholder="Numbers only" />
+          </label>
+          <label>Relevance
+            <select id="modalRelevance"></select>
+          </label>
+          <div class="full">
+            <label style="margin-bottom:0.45rem">Notes</label>
+            <div class="modal-note-panel">
+              <div class="note-toolbar">
+                <button class="ghost tiny" type="button" data-modal-command="bold"><b>B</b></button>
+                <button class="ghost tiny" type="button" data-modal-command="italic"><i>I</i></button>
+                <button class="ghost tiny" type="button" data-modal-command="underline"><u>U</u></button>
+                <button class="ghost tiny" type="button" data-modal-command="insertUnorderedList">• List</button>
+                <button class="ghost tiny" type="button" data-modal-command="formatBlock" data-value="h3">Title</button>
+                <button class="swatch blue" type="button" data-modal-command="foreColor" data-value="#2f6fd6" title="Blue"></button>
+                <button class="swatch red" type="button" data-modal-command="foreColor" data-value="#c23434" title="Red"></button>
+                <button class="swatch orange" type="button" data-modal-command="foreColor" data-value="#d97917" title="Orange"></button>
+                <button class="swatch green" type="button" data-modal-command="foreColor" data-value="#3d8a42" title="Green"></button>
+                <button class="ghost tiny" type="button" data-modal-command="removeFormat">Clear format</button>
+              </div>
+              <div class="note-editor" id="modalNotes" contenteditable="true"></div>
+            </div>
+          </div>
+          <div class="modal-actions full">
+            <button class="ghost" id="oppCancelBtn" type="button">Cancel</button>
+            <button id="oppSaveBtn" type="submit">Save opportunity</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </div>
+
+  <template id="noteToolbarTemplate">
+    <div class="note-toolbar">
+      <button class="ghost tiny" data-command="bold"><b>B</b></button>
+      <button class="ghost tiny" data-command="italic"><i>I</i></button>
+      <button class="ghost tiny" data-command="underline"><u>U</u></button>
+      <button class="ghost tiny" data-command="insertUnorderedList">• List</button>
+      <button class="ghost tiny" data-command="formatBlock" data-value="h3">Title</button>
+      <button class="swatch blue" data-command="foreColor" data-value="#2f6fd6" title="Blue"></button>
+      <button class="swatch red" data-command="foreColor" data-value="#c23434" title="Red"></button>
+      <button class="swatch orange" data-command="foreColor" data-value="#d97917" title="Orange"></button>
+      <button class="swatch green" data-command="foreColor" data-value="#3d8a42" title="Green"></button>
+      <button class="ghost tiny" data-command="removeFormat">Clear format</button>
+    </div>
+  </template>
+
+  <script>
+    const STORAGE_KEY = "opportunity-dashboard-v1";
+    const RELEVANCE = ["Closed","Committed","Strong Upside","Upside","Pipeline"];
+    const ADD_DOMAIN_VALUE = "__add_domain__";
+    const ADD_AM_VALUE = "__add_am__";
+    const ADD_SE_VALUE = "__add_se__";
+    const DEFAULT_STATE = {
+      rows: [],
+      domains: ["RCMIN","GW/CORE","SDE","RCREN","TPIA","WIRELESS","R4B"],
+      amOwners: ["Ahmed","Maria","TBD"],
+      seOwners: ["Vlad","Paolo","Mohammed"],
+      customAmount: 0,
+      salesAchievement: 0,
+      targetQuota: 0,
+      csvUrl: "",
+      writeUrl: "",
+      expanded: {},
+      theme: "light"
+    };
+    let state = loadState();
+    let autoSaveTimer = null;
+    let autoSaving = false;
+    let localCsvHandle = null;
+
+    const $ = selector => document.querySelector(selector);
+    const body = $("#opportunityBody");
+    const datalistId = "domainOptions";
+
+    document.documentElement.dataset.theme = state.theme || "light";
+    ensureDatalist();
+    renderFilters();
+    renderAll();
+
+    $("#addOppBtn").addEventListener("click", () => openOpportunityModal());
+    $("#addOppToolbarBtn").addEventListener("click", () => openOpportunityModal());
+    $("#syncToggleBtn").addEventListener("click", () => $("#syncPanel").classList.toggle("open"));
+    $("#themeBtn").addEventListener("click", toggleTheme);
+    $("#customAmountInput").addEventListener("input", event => {
+      state.customAmount = parseMoney(event.target.value);
+      persist(false);
+      updateSummary();
+    });
+    $("#customAmountInput").addEventListener("blur", event => event.target.value = money(state.customAmount));
+    $("#salesAchievementInput").addEventListener("input", event => {
+      state.salesAchievement = parseMoney(event.target.value);
+      persist(false);
+      updateAchievementPercent();
+    });
+    $("#salesAchievementInput").addEventListener("blur", event => event.target.value = money(state.salesAchievement));
+    $("#targetQuotaInput").addEventListener("input", event => {
+      state.targetQuota = parseMoney(event.target.value);
+      persist(false);
+      updateAchievementPercent();
+    });
+    $("#targetQuotaInput").addEventListener("blur", event => event.target.value = money(state.targetQuota));
+    $("#searchInput").addEventListener("input", renderRows);
+    $("#relevanceFilter").addEventListener("change", renderRows);
+    $("#quarterFilter").addEventListener("change", renderRows);
+    // Add new Domain / AM / SE is handled directly inside the popup dropdowns.
+    $("#csvUrlInput").value = state.csvUrl || "";
+    $("#writeUrlInput").value = state.writeUrl || "";
+    $("#csvUrlInput").addEventListener("input", event => { state.csvUrl = event.target.value.trim(); persist(false, false); updateSyncStatus(); });
+    $("#writeUrlInput").addEventListener("input", event => { state.writeUrl = event.target.value.trim(); persist(false, false); });
+    $("#loadCsvUrlBtn").addEventListener("click", loadCsvUrl);
+    $("#exportCsvBtn").addEventListener("click", exportCsv);
+    $("#importCsvBtn").addEventListener("click", () => $("#importCsvFile").click());
+    $("#importCsvFile").addEventListener("change", importCsvFile);
+    $("#pushCsvBtn").addEventListener("click", () => pushCsv(false));
+    $("#linkLocalCsvBtn").addEventListener("click", linkLocalCsv);
+    $("#saveLocalCsvBtn").addEventListener("click", () => saveLinkedCsv(false));
+    $("#testFlowBtn").addEventListener("click", testPowerAutomateFlow);
+    $("#oppForm").addEventListener("submit", saveOpportunityFromModal);
+    $("#oppModalCloseBtn").addEventListener("click", closeOpportunityModal);
+    $("#oppCancelBtn").addEventListener("click", closeOpportunityModal);
+    $("#oppModal").addEventListener("click", event => { if (event.target.id === "oppModal") closeOpportunityModal(); });
+    $("#oppModal").addEventListener("click", handleModalCommand);
+    $("#modalDate").addEventListener("change", event => { $("#modalQuarter").value = quarterFromDate(event.target.value); });
+    $("#modalPostponeBtn").addEventListener("click", postponeModalDate);
+    $("#modalDomain").addEventListener("change", handleModalSelectChange);
+    $("#modalAm").addEventListener("change", handleModalSelectChange);
+    $("#modalSe").addEventListener("change", handleModalSelectChange);
+    $("#modalQuote").addEventListener("input", event => { event.target.value = event.target.value.replace(/\D/g, ""); });
+    $("#modalPo").addEventListener("input", event => { event.target.value = event.target.value.replace(/\D/g, ""); });
+    $("#modalSize").addEventListener("focus", event => { event.target.value = String(parseMoney(event.target.value) || ""); });
+    $("#modalSize").addEventListener("blur", event => { event.target.value = money(parseMoney(event.target.value)); });
+    window.addEventListener("keydown", event => { if (event.key === "Escape" && $("#oppModal").classList.contains("open")) closeOpportunityModal(); });
+
+    body.addEventListener("input", handleBodyInput);
+    body.addEventListener("change", handleBodyChange);
+    body.addEventListener("click", handleBodyClick);
+    body.addEventListener("focusin", event => {
+      if (event.target.matches(".currency-input")) {
+        const row = getRow(event.target.dataset.id);
+        event.target.value = row ? String(row.size || "") : "";
+      }
+    });
+    body.addEventListener("focusout", event => {
+      if (event.target.matches(".currency-input")) {
+        const row = getRow(event.target.dataset.id);
+        event.target.value = row ? money(row.size || 0) : "$0";
+      }
+      if (event.target.matches(".note-editor")) saveNote(event.target);
+    });
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return structuredClone(DEFAULT_STATE);
+        const parsed = JSON.parse(raw);
+        return {
+          ...structuredClone(DEFAULT_STATE),
+          ...parsed,
+          domains: unique([...(parsed.domains || []), ...DEFAULT_STATE.domains]),
+          amOwners: unique([...(parsed.amOwners || []), ...DEFAULT_STATE.amOwners]),
+          seOwners: unique([...(parsed.seOwners || []), ...DEFAULT_STATE.seOwners])
+        };
+      } catch {
+        return structuredClone(DEFAULT_STATE);
+      }
+    }
+    function persist(showSaved = true, autoSync = true) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      if (showSaved) {
+        const now = new Date();
+        $("#lastSavedPill").textContent = `Saved ${now.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"})}`;
+      }
+      updateSyncStatus();
+      if (autoSync) scheduleAutoSave();
+    }
+    function uid() { return `opp-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
+    function unique(values) { return [...new Set(values.map(v => String(v || "").trim()).filter(Boolean))]; }
+    let editingModalId = null;
+
+    function refreshModalSelects(row = {}) {
+      $("#modalDomain").innerHTML = domainOptions(row.domain || state.domains[0] || "RCMIN");
+      $("#modalAm").innerHTML = ownerOptions(state.amOwners, row.am || state.amOwners[0] || "Ahmed", ADD_AM_VALUE, "+ Add new AM");
+      $("#modalSe").innerHTML = ownerOptions(state.seOwners, row.se || state.seOwners[0] || "Vlad", ADD_SE_VALUE, "+ Add new SE");
+      $("#modalRelevance").innerHTML = relevanceOptions(row.relevance || "Pipeline");
+    }
+    function openOpportunityModal(row = null) {
+      const today = isoDate(new Date());
+      const data = row || {
+        name: "",
+        domain: state.domains[0] || "RCMIN",
+        size: 0,
+        am: state.amOwners[0] || "Ahmed",
+        se: state.seOwners[0] || "Vlad",
+        date: today,
+        quarter: quarterFromDate(today),
+        quote: "",
+        po: "",
+        relevance: "Pipeline",
+        notesHtml: ""
+      };
+      editingModalId = row ? row.id : null;
+      refreshModalSelects(data);
+      $("#oppModalTitle").textContent = row ? "Edit opportunity" : "Add opportunity";
+      $("#oppSaveBtn").textContent = row ? "Save changes" : "Save opportunity";
+      $("#modalName").value = data.name || "";
+      $("#modalDomain").value = data.domain || state.domains[0] || "RCMIN";
+      $("#modalSize").value = money(data.size || 0);
+      $("#modalAm").value = data.am || state.amOwners[0] || "Ahmed";
+      $("#modalSe").value = data.se || state.seOwners[0] || "Vlad";
+      $("#modalDate").value = data.date || today;
+      $("#modalQuarter").value = data.quarter || quarterFromDate(data.date || today);
+      $("#modalQuote").value = String(data.quote || "").replace(/\D/g, "");
+      $("#modalPo").value = String(data.po || "").replace(/\D/g, "");
+      $("#modalRelevance").value = data.relevance || "Pipeline";
+      $("#modalNotes").innerHTML = sanitizeNote(data.notesHtml || "");
+      $("#modalPostponeCount").value = "";
+      $("#modalPostponeUnit").value = "weeks";
+      $("#oppModal").classList.add("open");
+      setTimeout(() => $("#modalName").focus(), 0);
+    }
+    function closeOpportunityModal() {
+      $("#oppModal").classList.remove("open");
+      editingModalId = null;
+      $("#oppForm").reset();
+      $("#modalNotes").innerHTML = "";
+      $("#modalPostponeCount").value = "";
+    }
+    function postponeModalDate() {
+      const count = Number(String($("#modalPostponeCount").value || "").replace(/\D/g, ""));
+      if (!count) return;
+      const unit = $("#modalPostponeUnit").value;
+      const date = $("#modalDate").value ? new Date($("#modalDate").value + "T00:00:00") : new Date();
+      if (unit === "weeks") date.setDate(date.getDate() + count * 7);
+      if (unit === "months") date.setMonth(date.getMonth() + count);
+      const next = isoDate(date);
+      $("#modalDate").value = next;
+      $("#modalQuarter").value = quarterFromDate(next);
+      $("#modalPostponeCount").value = "";
+    }
+    function saveOpportunityFromModal(event) {
+      event.preventDefault();
+      const date = $("#modalDate").value || isoDate(new Date());
+      const rowData = {
+        name: $("#modalName").value.trim(),
+        domain: $("#modalDomain").value.trim() || "RCMIN",
+        size: parseMoney($("#modalSize").value),
+        am: $("#modalAm").value || "TBD",
+        se: $("#modalSe").value || "Vlad",
+        date,
+        quarter: $("#modalQuarter").value || quarterFromDate(date),
+        quote: $("#modalQuote").value.replace(/\D/g, ""),
+        po: $("#modalPo").value.replace(/\D/g, ""),
+        relevance: $("#modalRelevance").value || "Pipeline",
+        notesHtml: sanitizeNote($("#modalNotes").innerHTML),
+        updatedAt: new Date().toISOString()
+      };
+      if (rowData.domain && !state.domains.includes(rowData.domain)) {
+        state.domains = unique([...state.domains, rowData.domain]);
+      }
+      if (rowData.am && !state.amOwners.includes(rowData.am)) {
+        state.amOwners = unique([...state.amOwners, rowData.am]);
+      }
+      if (rowData.se && !state.seOwners.includes(rowData.se)) {
+        state.seOwners = unique([...state.seOwners, rowData.se]);
+      }
+      if (editingModalId) {
+        const row = getRow(editingModalId);
+        if (row) Object.assign(row, rowData);
+      } else {
+        state.rows.unshift({
+          id: uid(),
+          ...rowData,
+          createdAt: new Date().toISOString()
+        });
+      }
+      persist();
+      closeOpportunityModal();
+      renderAll();
+    }
+    function handleModalCommand(event) {
+      const btn = event.target.closest("[data-modal-command]");
+      if (!btn) return;
+      const editor = $("#modalNotes");
+      editor.focus();
+      document.execCommand(btn.dataset.modalCommand, false, btn.dataset.value || null);
+    }
+    function handleModalSelectChange(event) {
+      const target = event.target;
+      if (target.id === "modalDomain" && target.value === ADD_DOMAIN_VALUE) {
+        const value = prompt("Add domain");
+        if (!value || !value.trim()) {
+          target.value = state.domains[0] || "RCMIN";
+          return;
+        }
+        const clean = value.trim();
+        state.domains = unique([...state.domains, clean]);
+        persist(false, false);
+        ensureDatalist();
+        target.innerHTML = domainOptions(clean);
+        target.value = clean;
+        renderRows();
+        return;
+      }
+      if (target.id === "modalAm" && target.value === ADD_AM_VALUE) {
+        const value = prompt("Add AM");
+        if (!value || !value.trim()) {
+          target.value = state.amOwners[0] || "Ahmed";
+          return;
+        }
+        const clean = value.trim();
+        state.amOwners = unique([...state.amOwners, clean]);
+        persist(false, false);
+        target.innerHTML = ownerOptions(state.amOwners, clean, ADD_AM_VALUE, "+ Add new AM");
+        target.value = clean;
+        return;
+      }
+      if (target.id === "modalSe" && target.value === ADD_SE_VALUE) {
+        const value = prompt("Add SE");
+        if (!value || !value.trim()) {
+          target.value = state.seOwners[0] || "Vlad";
+          return;
+        }
+        const clean = value.trim();
+        state.seOwners = unique([...state.seOwners, clean]);
+        persist(false, false);
+        target.innerHTML = ownerOptions(state.seOwners, clean, ADD_SE_VALUE, "+ Add new SE");
+        target.value = clean;
+      }
+    }
+    function clearDashboard() {
+      if (!confirm("Clear all opportunities from this browser?")) return;
+      state.rows = [];
+      state.expanded = {};
+      persist();
+      renderAll();
+    }
+    function addListValue(key, label) {
+      const value = prompt(`Add ${label}`);
+      if (!value) return;
+      state[key] = unique([...(state[key] || []), value.trim()]);
+      persist();
+      ensureDatalist();
+      renderRows();
+    }
+    function toggleTheme() {
+      state.theme = state.theme === "dark" ? "light" : "dark";
+      document.documentElement.dataset.theme = state.theme;
+      $("#themeBtn").textContent = state.theme === "dark" ? "☀️ Light" : "🌙 Dark";
+      persist(false);
+    }
+    function getRow(id) { return state.rows.find(row => row.id === id); }
+    function isoDate(date) {
+      const d = new Date(date);
+      if (Number.isNaN(d.getTime())) return "";
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+    }
+    function quarterFromDate(dateText) {
+      if (!dateText) return "Q1";
+      const m = Number(dateText.slice(5,7));
+      if (!m) return "Q1";
+      return `Q${Math.ceil(m / 3)}`;
+    }
+    function money(value) {
+      const num = Number(value || 0);
+      return new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 }).format(num);
+    }
+    function parseMoney(value) {
+      const cleaned = String(value || "").replace(/[^0-9.-]/g, "");
+      const parsed = Number(cleaned);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>'"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;","\"":"&quot;"}[ch]));
+    }
+    function relevanceClass(value) { return String(value || "").toLowerCase().replace(/\s+/g,"-"); }
+
+    function renderAll() {
+      $("#customAmountInput").value = money(state.customAmount || 0);
+      $("#salesAchievementInput").value = money(state.salesAchievement || 0);
+      $("#targetQuotaInput").value = money(state.targetQuota || 0);
+      updateAchievementPercent();
+      $("#themeBtn").textContent = state.theme === "dark" ? "☀️ Light" : "🌙 Dark";
+      ensureDatalist();
+      renderFilters();
+      renderRows();
+      updateSummary();
+      updateSyncStatus();
+    }
+    function renderFilters() {
+      const current = $("#relevanceFilter").value || "all";
+      $("#relevanceFilter").innerHTML = `<option value="all">All relevance</option>${RELEVANCE.map(r => `<option>${escapeHtml(r)}</option>`).join("")}`;
+      $("#relevanceFilter").value = RELEVANCE.includes(current) ? current : "all";
+    }
+    function ensureDatalist() {
+      let datalist = document.getElementById(datalistId);
+      if (!datalist) {
+        datalist = document.createElement("datalist");
+        datalist.id = datalistId;
+        document.body.appendChild(datalist);
+      }
+      datalist.innerHTML = state.domains.map(domain => `<option value="${escapeHtml(domain)}"></option>`).join("");
+    }
+    function domainOptions(selected) {
+      const values = unique([...DEFAULT_STATE.domains, ...(state.domains || []), selected].filter(Boolean));
+      const options = values.map(value => `<option value="${escapeHtml(value)}" ${value === selected ? "selected" : ""}>${escapeHtml(value)}</option>`).join("");
+      return `${options}<option value="${ADD_DOMAIN_VALUE}">+ Add new domain</option>`;
+    }
+    function ownerOptions(list, selected, addValue = "", addLabel = "") {
+      const values = unique([...(list || []), selected].filter(Boolean));
+      const options = values.map(value => `<option value="${escapeHtml(value)}" ${value === selected ? "selected" : ""}>${escapeHtml(value)}</option>`).join("");
+      return addValue ? `${options}<option value="${addValue}">${addLabel}</option>` : options;
+    }
+    function relevanceOptions(selected) {
+      return RELEVANCE.map(value => `<option value="${escapeHtml(value)}" ${value === selected ? "selected" : ""}>${escapeHtml(value)}</option>`).join("");
+    }
+    function quarterOptions(selected) {
+      return ["Q1","Q2","Q3","Q4"].map(q => `<option value="${q}" ${q === selected ? "selected" : ""}>${q}</option>`).join("");
+    }
+    function filteredRows() {
+      const query = $("#searchInput").value.trim().toLowerCase();
+      const relevance = $("#relevanceFilter").value;
+      const quarter = $("#quarterFilter").value;
+      return state.rows.filter(row => {
+        const haystack = [row.name,row.domain,row.am,row.se,row.quote,row.po,row.relevance,row.quarter,stripHtml(row.notesHtml)].join(" ").toLowerCase();
+        return (!query || haystack.includes(query)) &&
+               (relevance === "all" || row.relevance === relevance) &&
+               (quarter === "all" || row.quarter === quarter);
+      });
+    }
+    function renderRows() {
+      const rows = filteredRows();
+      $("#rowCount").textContent = `${state.rows.length} opportunities${rows.length !== state.rows.length ? ` / ${rows.length} shown` : ""}`;
+      $("#emptyState").classList.toggle("hidden", state.rows.length > 0);
+      body.innerHTML = rows.map(row => renderRow(row)).join("");
+    }
+    function renderRow(row) {
+      const open = !!state.expanded[row.id];
+      const quarter = row.quarter || quarterFromDate(row.date);
+      const notesLabel = open ? "Hide" : (stripHtml(row.notesHtml || "") ? "View" : "Add");
+      return `
+        <tr class="opp-row" data-id="${row.id}">
+          <td title="${escapeHtml(row.name || "")}"><span class="cell-text strong">${escapeHtml(row.name || "—")}</span></td>
+          <td title="${escapeHtml(row.domain || "")}"><span class="cell-text">${escapeHtml(row.domain || "—")}</span></td>
+          <td><span class="cell-text money">${money(row.size || 0)}</span></td>
+          <td title="${escapeHtml(row.am || "")}"><span class="cell-text">${escapeHtml(row.am || "—")}</span></td>
+          <td title="${escapeHtml(row.se || "")}"><span class="cell-text">${escapeHtml(row.se || "—")}</span></td>
+          <td><div class="date-summary"><span class="cell-text">${escapeHtml(row.date || "—")}</span><select class="inline-select quarter-inline" data-id="${escapeHtml(row.id)}" data-field="quarter" aria-label="Quarter">${quarterOptions(quarter)}</select></div></td>
+          <td title="${escapeHtml(row.quote || "")}"><span class="cell-text">${escapeHtml(row.quote || "—")}</span></td>
+          <td title="${escapeHtml(row.po || "")}"><span class="cell-text">${escapeHtml(row.po || "—")}</span></td>
+          <td><select class="inline-select relevance-inline" data-id="${escapeHtml(row.id)}" data-field="relevance" aria-label="Relevance">${relevanceOptions(row.relevance || "Pipeline")}</select></td>
+          <td class="notes-cell"><button class="ghost tiny toggle-note-btn" data-id="${row.id}" type="button">${notesLabel}</button></td>
+          <td><div class="row-actions"><button class="ghost tiny edit-btn" data-id="${row.id}" type="button">Edit</button><button class="ghost tiny duplicate-btn" data-id="${row.id}" type="button">Copy</button><button class="danger tiny delete-btn" data-id="${row.id}" type="button">Delete</button></div></td>
+        </tr>
+        <tr class="note-row ${open ? "open" : ""}" data-note-row="${row.id}">
+          <td colspan="11">
+            <div class="note-panel">
+              ${$("#noteToolbarTemplate").innerHTML}
+              <div class="note-editor" data-id="${row.id}" contenteditable="true">${sanitizeNote(row.notesHtml || "")}</div>
+            </div>
+          </td>
+        </tr>`;
+    }
+    function handleBodyInput(event) {
+      const target = event.target;
+      const id = target.dataset.id;
+      const row = getRow(id);
+      if (!row) return;
+      if (target.matches("[data-field]")) {
+        const field = target.dataset.field;
+        let value = target.value;
+        if (["quote","po"].includes(field)) {
+          value = value.replace(/\D/g, "");
+          target.value = value;
+        }
+        if (field === "domain" && value === ADD_DOMAIN_VALUE) {
+          const added = prompt("Add domain");
+          if (added && added.trim()) {
+            value = added.trim();
+            state.domains = unique([...state.domains, value]);
+            ensureDatalist();
+          } else {
+            value = row.domain || state.domains[0] || "RCMIN";
+          }
+          target.innerHTML = domainOptions(value);
+          target.value = value;
+        }
+        if (field === "size") value = parseMoney(value);
+        row[field] = value;
+        if (field === "domain" && value && !state.domains.includes(value)) {
+          state.domains = unique([...state.domains, value]);
+          ensureDatalist();
+        }
+        row.updatedAt = new Date().toISOString();
+        persist(false, false);
+        updateSummary();
+      }
+      if (target.matches(".note-editor")) saveNote(target, false);
+    }
+    function handleBodyChange(event) {
+      const target = event.target;
+      const id = target.dataset.id;
+      const row = getRow(id);
+      if (!row) return;
+      if (target.dataset.field === "date") {
+        row.date = target.value;
+        row.quarter = quarterFromDate(target.value);
+        row.updatedAt = new Date().toISOString();
+        persist();
+        renderRows();
+        updateSummary();
+        return;
+      }
+      if (target.dataset.field === "domain") {
+        let value = target.value;
+        if (value === ADD_DOMAIN_VALUE) {
+          const added = prompt("Add domain");
+          if (added && added.trim()) {
+            value = added.trim();
+            state.domains = unique([...state.domains, value]);
+            ensureDatalist();
+          } else {
+            value = row.domain || state.domains[0] || "RCMIN";
+          }
+        }
+        row.domain = value;
+        row.updatedAt = new Date().toISOString();
+        persist();
+        renderRows();
+        updateSummary();
+        return;
+      }
+      if (["quarter","relevance","am","se"].includes(target.dataset.field)) {
+        row[target.dataset.field] = target.value;
+        row.updatedAt = new Date().toISOString();
+        persist();
+        renderRows();
+        updateSummary();
+      }
+    }
+    function handleBodyClick(event) {
+      const noteCommandBtn = event.target.closest("[data-command]");
+      if (noteCommandBtn) {
+        const panel = noteCommandBtn.closest(".note-panel");
+        const editor = panel.querySelector(".note-editor");
+        editor.focus();
+        document.execCommand(noteCommandBtn.dataset.command, false, noteCommandBtn.dataset.value || null);
+        saveNote(editor);
+        return;
+      }
+      const idBtn = event.target.closest("button[data-id]");
+      if (!idBtn) return;
+      const id = idBtn.dataset.id;
+      if (idBtn.classList.contains("edit-btn")) {
+        const row = getRow(id);
+        if (row) openOpportunityModal(row);
+        return;
+      }
+      if (idBtn.classList.contains("toggle-note-btn")) {
+        state.expanded[id] = !state.expanded[id];
+        persist(false, false);
+        renderRows();
+        return;
+      }
+      if (idBtn.classList.contains("delete-btn")) {
+        const row = getRow(id);
+        if (!row || !confirm(`Delete opportunity ${row.name || row.domain || ""}?`)) return;
+        state.rows = state.rows.filter(item => item.id !== id);
+        delete state.expanded[id];
+        persist();
+        renderAll();
+        return;
+      }
+      if (idBtn.classList.contains("duplicate-btn")) {
+        const row = getRow(id);
+        if (!row) return;
+        state.rows.unshift({...row, id: uid(), quote: "", po: "", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()});
+        persist();
+        renderAll();
+        return;
+      }
+      if (idBtn.classList.contains("postpone-btn")) postponeRow(id, idBtn.closest(".date-tools"));
+    }
+    function postponeRow(id, shell) {
+      const row = getRow(id);
+      if (!row) return;
+      const count = Number(shell.querySelector(".postpone-count").value.replace(/\D/g,""));
+      const unit = shell.querySelector(".postpone-unit").value;
+      if (!count) return;
+      const date = row.date ? new Date(row.date + "T00:00:00") : new Date();
+      if (unit === "weeks") date.setDate(date.getDate() + count * 7);
+      if (unit === "months") date.setMonth(date.getMonth() + count);
+      row.date = isoDate(date);
+      row.quarter = quarterFromDate(row.date);
+      row.updatedAt = new Date().toISOString();
+      persist();
+      renderAll();
+    }
+    function saveNote(editor, showSaved = true) {
+      const row = getRow(editor.dataset.id);
+      if (!row) return;
+      row.notesHtml = sanitizeNote(editor.innerHTML);
+      row.updatedAt = new Date().toISOString();
+      persist(showSaved);
+    }
+    function updateAchievementPercent() {
+      const salesAchievement = Number(state.salesAchievement || 0);
+      const targetQuota = Number(state.targetQuota || 0);
+      const percent = targetQuota > 0 ? (salesAchievement / targetQuota) * 100 : 0;
+      $("#achievementPercent").textContent = `${percent.toFixed(percent >= 100 ? 0 : 1)}%`;
+    }
+    function updateSummary() {
+      const committed = state.rows.filter(r => ["Closed","Committed"].includes(r.relevance)).reduce((s,r) => s + Number(r.size || 0), 0);
+      const strong = state.rows.filter(r => r.relevance === "Strong Upside").reduce((s,r) => s + Number(r.size || 0), 0);
+      const pipeline = state.rows.filter(r => ["Upside","Pipeline"].includes(r.relevance)).reduce((s,r) => s + Number(r.size || 0), 0);
+      const custom = Number(state.customAmount || 0);
+      $("#committedTotal").textContent = money(committed);
+      $("#strongUpsideTotal").textContent = money(strong);
+      $("#pipelineTotal").textContent = money(pipeline);
+      $("#grandTotal").textContent = money(committed + custom);
+      updateAchievementPercent();
+      const quarters = {Q1:0,Q2:0,Q3:0,Q4:0};
+      state.rows
+        .filter(row => ["Closed","Committed"].includes(row.relevance))
+        .forEach(row => { quarters[row.quarter || quarterFromDate(row.date)] += Number(row.size || 0); });
+      $("#quarterGrid").innerHTML = Object.entries(quarters).map(([q,total]) => `<article class="quarter-card"><span class="stat-label">${q}</span><strong>${money(total)}</strong><span class="stat-sub">Committed only</span></article>`).join("");
+    }
+    function updateSyncStatus() {
+      const pill = $("#syncStatus");
+      pill.className = "sync-pill";
+      if (localCsvHandle) {
+        pill.classList.add("linked");
+        pill.textContent = "Local CSV linked";
+      } else if (state.csvUrl) {
+        pill.classList.add("linked");
+        pill.textContent = "Power Automate linked";
+      } else {
+        pill.classList.add("local");
+        pill.textContent = "Local only";
+      }
+    }
+
+    function sanitizeNote(html) {
+      const template = document.createElement("template");
+      template.innerHTML = html || "";
+      const allowed = new Set(["B","STRONG","I","EM","U","UL","OL","LI","P","DIV","BR","SPAN","H1","H2","H3"]);
+      const cleanNode = node => {
+        if (node.nodeType === Node.TEXT_NODE) return document.createTextNode(node.textContent);
+        if (node.nodeType !== Node.ELEMENT_NODE) return document.createTextNode("");
+        const tag = node.tagName;
+        const children = [...node.childNodes].map(cleanNode);
+        if (!allowed.has(tag)) {
+          const frag = document.createDocumentFragment();
+          children.forEach(child => frag.appendChild(child));
+          return frag;
+        }
+        const el = document.createElement(tag.toLowerCase());
+        if (tag === "SPAN") {
+          const color = node.style.color;
+          if (/^(#[0-9a-f]{3,6}|rgb\(\d{1,3},\s*\d{1,3},\s*\d{1,3}\))$/i.test(color)) el.style.color = color;
+        }
+        children.forEach(child => el.appendChild(child));
+        return el;
+      };
+      const out = document.createElement("div");
+      [...template.content.childNodes].forEach(node => out.appendChild(cleanNode(node)));
+      return out.innerHTML;
+    }
+    function stripHtml(html) {
+      const div = document.createElement("div");
+      div.innerHTML = sanitizeNote(html || "");
+      return div.textContent || "";
+    }
+
+    function rowsToCsv() {
+      const metadata = [
+        ["#META","Custom Amount",state.customAmount || 0],
+        ["#META","Total Sales Achievement",state.salesAchievement || 0],
+        ["#META","Total Target Quota",state.targetQuota || 0]
+      ];
+      const header = ["Opportunity name","Domain","Opp size","AM","SE","Estimated completion date","Quarter","Quote number","PO number","Relevance","Notes"];
+      const rows = state.rows.map(row => [
+        row.name,
+        row.domain,
+        row.size,
+        row.am,
+        row.se,
+        row.date,
+        row.quarter,
+        row.quote,
+        row.po,
+        row.relevance,
+        row.notesHtml
+      ]);
+      return [...metadata, header, ...rows].map(values => values.map(csvEscape).join(",")).join("\n");
+    }
+    function csvEscape(value) {
+      const text = String(value ?? "");
+      return /[",\n\r]/.test(text) ? `"${text.replace(/"/g,'""')}"` : text;
+    }
+    function exportCsv() {
+      const blob = new Blob([rowsToCsv()], {type: "text/csv;charset=utf-8"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `opportunity-dashboard-${isoDate(new Date())}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+    function parseCsv(text) {
+      const rows = [];
+      let row = [], value = "", inQuotes = false;
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const next = text[i + 1];
+        if (char === '"' && inQuotes && next === '"') { value += '"'; i++; continue; }
+        if (char === '"') { inQuotes = !inQuotes; continue; }
+        if (char === ',' && !inQuotes) { row.push(value); value = ""; continue; }
+        if ((char === '\n' || char === '\r') && !inQuotes) {
+          if (char === '\r' && next === '\n') i++;
+          row.push(value); rows.push(row); row = []; value = ""; continue;
+        }
+        value += char;
+      }
+      row.push(value); rows.push(row);
+      return rows.filter(r => r.some(cell => String(cell).trim() !== ""));
+    }
+    function normalizeHeader(header) { return String(header || "").toLowerCase().replace(/[^a-z0-9]/g, ""); }
+    function csvToRows(text) {
+      const parsed = parseCsv(text);
+      if (!parsed.length) return [];
+      let headerIndex = 0;
+      for (let i = 0; i < parsed.length; i++) {
+        const first = String(parsed[i][0] || "").trim();
+        if (first === "#META") {
+          const key = normalizeHeader(parsed[i][1]);
+          const value = parseMoney(parsed[i][2]);
+          if (key === "customamount") state.customAmount = value;
+          if (key === "totalsalesachievement" || key === "salesachievement") state.salesAchievement = value;
+          if (key === "totaltargetquota" || key === "targetquota") state.targetQuota = value;
+          headerIndex = i + 1;
+        } else {
+          headerIndex = i;
+          break;
+        }
+      }
+      if (parsed.length <= headerIndex) return [];
+      const headers = parsed[headerIndex].map(normalizeHeader);
+      const index = names => names.map(normalizeHeader).map(name => headers.indexOf(name)).find(i => i >= 0);
+      const idx = {
+        name: index(["Opportunity name","Opportunity","Opp name","Name"]),
+        domain: index(["Domain"]),
+        size: index(["Opp size","Opportunity size","Size","Amount"]),
+        am: index(["AM","Owner AM","Account Manager"]),
+        se: index(["SE","Owner SE","Sales Engineer"]),
+        date: index(["Estimated completion date","Completion date","Date"]),
+        quarter: index(["Quarter","Q"]),
+        quote: index(["Quote number","Quote #","Quote"]),
+        po: index(["PO number","PO #","PO"]),
+        relevance: index(["Relevance","Stage","Forecast category"]),
+        notes: index(["Notes","Note"]),
+        customAmount: index(["Custom Amount"]),
+        salesAchievement: index(["Total Sales Achievement","Sales Achievement"]),
+        targetQuota: index(["Total Target Quota","Target Quota"])
+      };
+      const dataRows = parsed.slice(headerIndex + 1);
+      const firstData = dataRows.find(cells => cells.some(cell => String(cell || "").trim()));
+      if (firstData) {
+        if (idx.customAmount >= 0) state.customAmount = parseMoney(firstData[idx.customAmount]);
+        if (idx.salesAchievement >= 0) state.salesAchievement = parseMoney(firstData[idx.salesAchievement]);
+        if (idx.targetQuota >= 0) state.targetQuota = parseMoney(firstData[idx.targetQuota]);
+      }
+      return dataRows
+        .filter(cells => cells.some(cell => String(cell || "").trim()))
+        .map(cells => {
+          const row = {
+            id: uid(),
+            name: cells[idx.name] || "",
+            domain: cells[idx.domain] || "RCMIN",
+            size: parseMoney(cells[idx.size]),
+            am: cells[idx.am] || "TBD",
+            se: cells[idx.se] || "Vlad",
+            date: cells[idx.date] || "",
+            quarter: cells[idx.quarter] || quarterFromDate(cells[idx.date] || ""),
+            quote: String(cells[idx.quote] || "").replace(/\D/g, ""),
+            po: String(cells[idx.po] || "").replace(/\D/g, ""),
+            relevance: RELEVANCE.includes(cells[idx.relevance]) ? cells[idx.relevance] : "Pipeline",
+            notesHtml: sanitizeNote(cells[idx.notes] || ""),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+          if (!row.quarter || !["Q1","Q2","Q3","Q4"].includes(row.quarter)) row.quarter = quarterFromDate(row.date);
+          return row;
+        });
+    }
+    function scheduleAutoSave() {
+      const endpoint = ($("#writeUrlInput")?.value || state.writeUrl || $("#csvUrlInput")?.value || state.csvUrl || "").trim();
+      if (!endpoint && !localCsvHandle) return;
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(() => autoSaveCsv(), 1200);
+    }
+    async function autoSaveCsv() {
+      if (autoSaving) return;
+      autoSaving = true;
+      const pill = $("#syncStatus");
+      try {
+        if (localCsvHandle) {
+          await saveLinkedCsv(true);
+        }
+        const endpoint = ($("#writeUrlInput")?.value || state.writeUrl || $("#csvUrlInput")?.value || state.csvUrl || "").trim();
+        if (endpoint) {
+          pill.className = "sync-pill syncing";
+          pill.textContent = "Auto-saving CSV";
+          await callPowerAutomate(endpoint, { action: "write", csv: rowsToCsv() });
+          pill.className = "sync-pill linked";
+          pill.textContent = "CSV auto-saved";
+        }
+      } catch (error) {
+        pill.className = "sync-pill error";
+        pill.textContent = "Auto-save failed";
+        console.warn("Auto-save failed", error);
+      } finally {
+        autoSaving = false;
+      }
+    }
+    async function linkLocalCsv() {
+      if (!window.showOpenFilePicker) {
+        alert("Link Local CSV requires Chrome or Edge. Use Import/Export CSV in this browser.");
+        return;
+      }
+      try {
+        const [handle] = await window.showOpenFilePicker({
+          multiple: false,
+          types: [{ description: "CSV files", accept: { "text/csv": [".csv"] } }]
+        });
+        localCsvHandle = handle;
+        const file = await handle.getFile();
+        const text = await file.text();
+        state.rows = csvToRows(text);
+        state.domains = unique([...state.domains, ...state.rows.map(r => r.domain)]);
+        state.amOwners = unique([...state.amOwners, ...state.rows.map(r => r.am)]);
+        state.seOwners = unique([...state.seOwners, ...state.rows.map(r => r.se)]);
+        persist(true, false);
+        renderAll();
+        $("#syncStatus").className = "sync-pill linked";
+        $("#syncStatus").textContent = "Local CSV linked";
+      } catch (error) {
+        if (error?.name !== "AbortError") alert(`Could not link local CSV: ${error.message || error}`);
+      }
+    }
+    async function saveLinkedCsv(silent = false) {
+      if (!localCsvHandle) {
+        if (!silent) alert("No local CSV is linked yet. Click Link Local CSV first.");
+        return false;
+      }
+      try {
+        const writable = await localCsvHandle.createWritable();
+        await writable.write(rowsToCsv());
+        await writable.close();
+        const now = new Date();
+        $("#lastSavedPill").textContent = `Saved CSV ${now.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"})}`;
+        $("#syncStatus").className = "sync-pill linked";
+        $("#syncStatus").textContent = "Local CSV saved";
+        return true;
+      } catch (error) {
+        if (!silent) alert(`Could not save linked CSV: ${error.message || error}`);
+        throw error;
+      }
+    }
+
+    async function callPowerAutomate(url, payload) {
+      const res = await fetch(url, {
+        method: "POST",
+        mode: "cors",
+        credentials: "omit",
+        cache: "no-store",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
+      const text = await res.text();
+      if (!res.ok) throw new Error(text || `HTTP ${res.status}`);
+      return text;
+    }
+    function normalizePowerAutomateCsv(text) {
+      const raw = String(text || "");
+      const trimmed = raw.trim();
+      if (!trimmed) return "";
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (typeof parsed === "string") return parsed;
+        const csv = parsed.csv || parsed.body || parsed.content || parsed.data || parsed.text || parsed.value;
+        if (typeof csv === "string") return csv;
+        const encoded = parsed["$content"] || parsed.file?.["$content"] || parsed.body?.["$content"];
+        if (typeof encoded === "string") return atob(encoded);
+      } catch {}
+      return raw;
+    }
+    function powerAutomateErrorMessage(error) {
+      const msg = String(error?.message || error || "Unknown error");
+      if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) {
+        return "Browser could not reach/read the Power Automate response. This is almost always missing CORS headers, a wrong HTTP trigger URL, or the flow failed before the Response action. Make sure every Response action includes Access-Control-Allow-Origin: *.";
+      }
+      return msg;
+    }
+    async function testPowerAutomateFlow() {
+      const url = $("#csvUrlInput").value.trim();
+      if (!url) return alert("Paste the Power Automate HTTP trigger URL first.");
+      try {
+        const text = await callPowerAutomate(url, { action: "read" });
+        const csv = normalizePowerAutomateCsv(text);
+        alert(`Flow reached successfully. Returned ${csv.length} characters. First line: ${csv.split(/\r?\n/)[0] || "empty response"}`);
+      } catch (error) {
+        alert(`Flow test failed: ${powerAutomateErrorMessage(error)}`);
+      }
+    }
+
+    async function loadCsvUrl() {
+      const url = $("#csvUrlInput").value.trim();
+      if (!url) return alert("Paste the Power Automate HTTP trigger URL first.");
+      const pill = $("#syncStatus");
+      pill.className = "sync-pill syncing";
+      pill.textContent = "Pulling CSV";
+      try {
+        const text = await callPowerAutomate(url, { action: "read" });
+        const csv = normalizePowerAutomateCsv(text);
+        state.rows = csvToRows(csv);
+        state.csvUrl = url;
+        state.domains = unique([...state.domains, ...state.rows.map(r => r.domain)]);
+        state.amOwners = unique([...state.amOwners, ...state.rows.map(r => r.am)]);
+        state.seOwners = unique([...state.seOwners, ...state.rows.map(r => r.se)]);
+        persist(true, false);
+        renderAll();
+        pill.className = "sync-pill linked";
+        pill.textContent = "CSV pulled";
+      } catch (error) {
+        pill.className = "sync-pill error";
+        pill.textContent = "CSV pull failed";
+        alert(`Could not pull CSV through Power Automate. ${powerAutomateErrorMessage(error)}`);
+      }
+    }
+    function importCsvFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        state.rows = csvToRows(reader.result);
+        state.domains = unique([...state.domains, ...state.rows.map(r => r.domain)]);
+        state.amOwners = unique([...state.amOwners, ...state.rows.map(r => r.am)]);
+        state.seOwners = unique([...state.seOwners, ...state.rows.map(r => r.se)]);
+        persist(true, false);
+        renderAll();
+      };
+      reader.readAsText(file);
+      event.target.value = "";
+    }
+    async function pushCsv(silent = false) {
+      const url = $("#writeUrlInput").value.trim() || $("#csvUrlInput").value.trim();
+      if (!url) {
+        if (!silent) alert("Paste the Power Automate HTTP trigger URL first.");
+        return false;
+      }
+      const pill = $("#syncStatus");
+      pill.className = "sync-pill syncing";
+      pill.textContent = "Saving CSV";
+      try {
+        await callPowerAutomate(url, { action: "write", csv: rowsToCsv() });
+        state.csvUrl = $("#csvUrlInput").value.trim() || state.csvUrl;
+        persist(false, false);
+        pill.className = "sync-pill linked";
+        pill.textContent = "CSV saved";
+        return true;
+      } catch (error) {
+        pill.className = "sync-pill error";
+        pill.textContent = "Save failed";
+        if (!silent) alert(`Could not save CSV through Power Automate. ${powerAutomateErrorMessage(error)}`);
+        throw error;
+      }
+    }
+  </script>
+</body>
+</html>
